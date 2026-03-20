@@ -1,0 +1,13 @@
+packages:
+  "date-fns": "For precise date formatting, calendar math, and localized date strings"
+  "framer-motion": "For stunning layout transitions, modal animations, and micro-interactions"
+  "clsx": "Utility for conditionally merging Tailwind classes"
+  "tailwind-merge": "Utility to resolve Tailwind class conflicts intelligently"
+images:
+  - path: "artifacts/kantine-planner/public/images/stadium-bg.png"
+    description: "Abstract blurred night football stadium lights with a subtle green professional tint, clean elegant background"
+    aspect_ratio: "16:9"
+notes:
+  - "Assuming @workspace/api-client-react provides all generated Orval TanStack Query hooks"
+  - "Print styling is integrated via robust @media print blocks in index.css"
+  - "Using framer-motion for bulletproof, visually exceptional custom modals rather than depending on potentially incomplete UI library files"

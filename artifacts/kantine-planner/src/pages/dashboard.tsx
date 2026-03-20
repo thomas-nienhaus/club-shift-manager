@@ -416,11 +416,11 @@ export default function Dashboard() {
   const groupedShifts = useMemo(() => {
     if (!shifts) return {};
     // Volunteer login: only show their own assigned shifts
-    const visible = myVolunteerId
+    const visible = myVolunteerId && !isAdmin
       ? shifts.filter(s => s.assignments.some(a => a.volunteerId === myVolunteerId))
       : shifts;
     return groupByDate(visible);
-  }, [shifts, myVolunteerId]);
+  }, [shifts, myVolunteerId, isAdmin]);
 
   const sortedDates = Object.keys(groupedShifts).sort();
 

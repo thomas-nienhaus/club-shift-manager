@@ -1,0 +1,1 @@
+# club-shift-manager

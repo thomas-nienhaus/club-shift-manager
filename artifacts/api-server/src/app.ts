@@ -1,3 +1,5 @@
+import path from "path";
+import { fileURLToPath } from "url";
 import express, { type Express } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -44,5 +46,16 @@ app.use((req, res, next) => {
 });
 
 app.use("/api", router);
+
+if (process.env.NODE_ENV === "production") {
+  const distPath = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "../../../artifacts/kantine-planner/dist/public",
+  );
+  app.use(express.static(distPath));
+  app.use((_req, res) => {
+    res.sendFile(path.join(distPath, "index.html"));
+  });
+}
 
 export default app;

@@ -1,9 +1,0 @@
-[build]
-builder = "NIXPACKS"
-buildCommand = "pnpm install --frozen-lockfile && BASE_PATH=/ pnpm --filter @workspace/kantine-planner build"
-
-[deploy]
-startCommand = "pnpm --filter @workspace/kantine-planner serve"
-healthcheckPath = "/"
-restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 3

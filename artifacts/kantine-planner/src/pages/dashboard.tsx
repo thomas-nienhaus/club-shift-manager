@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { AuthGuard, useAuth } from '@/contexts/auth-context';
-import {
-  useListShifts, useAutoSchedule, useListSeasons, useListVolunteers,
-  type ShiftWithAssignments,
-} from '@workspace/api-client-react';
-import { format, addWeeks, subWeeks, startOfWeek, endOfWeek, parseISO, getDay } from 'date-fns';
+import { useListShifts } from '@/hooks/use-shifts';
+import { useListSeasons } from '@/hooks/use-seasons';
+import { useListVolunteers } from '@/hooks/use-volunteers';
+import type { ShiftWithAssignments } from '@/lib/types';
+import { format, addWeeks, subWeeks, startOfWeek, endOfWeek, parseISO } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import {
   ChevronLeft, ChevronRight, Plus, Printer, Calendar as CalendarIcon,
@@ -17,13 +17,15 @@ import { AssignModal } from '@/components/shift/assign-modal';
 import { SLOT_ORDER } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { useSlots } from '@/hooks/use-slots';
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { runAutoSchedule } from '@/utils/auto-schedule';
+import { generateIcal, downloadIcal } from '@/utils/ical';
 
 type FilterMode = 'week' | 'all';
 
 interface PrintFilters {
-  slotFilter: string[];   // empty = all slots
+  slotFilter: string[];
   volunteerId: number | null;
   volunteerName: string | null;
 }
@@ -34,22 +36,22 @@ function AutoScheduleModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: seasons } = useListSeasons();
-  const { mutate: runAutoSchedule, isPending } = useAutoSchedule();
+
+  const { mutate: doAutoSchedule, isPending } = useMutation({
+    mutationFn: ({ seasonId }: { seasonId: number | null }) =>
+      runAutoSchedule(seasonId ?? undefined),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['shifts'] });
+      toast({ title: 'Automatisch ingedeeld', description: result.message });
+      onClose();
+    },
+    onError: () => {
+      toast({ title: 'Fout', description: 'Er is iets misgegaan bij het automatisch indelen.', variant: 'destructive' });
+    },
+  });
 
   const handleSubmit = () => {
-    runAutoSchedule(
-      { data: { seasonId: selectedSeasonId } },
-      {
-        onSuccess: (result) => {
-          queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
-          toast({ title: 'Automatisch ingedeeld', description: result.message });
-          onClose();
-        },
-        onError: () => {
-          toast({ title: 'Fout', description: 'Er is iets misgegaan bij het automatisch indelen.', variant: 'destructive' });
-        },
-      }
-    );
+    doAutoSchedule({ seasonId: selectedSeasonId });
   };
 
   if (!isOpen) return null;
@@ -111,7 +113,6 @@ interface PrintOptionsModalProps {
 }
 
 function PrintOptionsModal({ isOpen, onClose, onPrint }: PrintOptionsModalProps) {
-  // null = all slots selected (no filter); string[] = explicit subset
   const [slotFilter, setSlotFilter] = useState<string[] | null>(null);
   const [volunteerId, setVolunteerId] = useState<number | null>(null);
   const { data: volunteers } = useListVolunteers();
@@ -154,7 +155,6 @@ function PrintOptionsModal({ isOpen, onClose, onPrint }: PrintOptionsModalProps)
         </div>
 
         <div className="p-6 space-y-6 overflow-y-auto flex-1">
-          {/* Slot filter */}
           {slots.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-3">
@@ -202,7 +202,6 @@ function PrintOptionsModal({ isOpen, onClose, onPrint }: PrintOptionsModalProps)
             </div>
           )}
 
-          {/* Volunteer filter */}
           <div>
             <label className="block text-sm font-bold mb-2 uppercase tracking-wide text-muted-foreground">
               Vrijwilliger (optioneel)
@@ -388,6 +387,7 @@ function ShiftsGrid({
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const { isAdmin, volunteerId: myVolunteerId, volunteerName: myVolunteerName } = useAuth();
+  const { toast } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [filterMode, setFilterMode] = useState<FilterMode>('week');
 
@@ -410,12 +410,11 @@ export default function Dashboard() {
     : {};
 
   const { data: shifts, isLoading } = useListShifts(screenParams);
-  const { data: allShifts } = useListShifts({});  // always fetch all for print
+  const { data: allShifts } = useListShifts({});
 
   // ── Grouped shifts for screen ─────────────────────────────────────────────
   const groupedShifts = useMemo(() => {
     if (!shifts) return {};
-    // Volunteer login: only show their own assigned shifts
     const visible = myVolunteerId && !isAdmin
       ? shifts.filter(s => s.assignments.some(a => a.volunteerId === myVolunteerId))
       : shifts;
@@ -463,7 +462,16 @@ export default function Dashboard() {
   const handleOpenEdit = (shift: ShiftWithAssignments) => { setEditShift(shift); setIsShiftModalOpen(true); };
   const handleOpenCreate = () => { setEditShift(null); setIsShiftModalOpen(true); };
   const handleOpenAssign = (shift: ShiftWithAssignments) => { setAssignShift(shift); setIsAssignModalOpen(true); };
-  const noop = () => {};
+
+  const handleIcalDownload = async () => {
+    if (!myVolunteerId) return;
+    try {
+      const content = await generateIcal(myVolunteerId);
+      downloadIcal(content, 'mijn-diensten.ics');
+    } catch {
+      toast({ title: 'Fout', description: 'Agenda kon niet worden gedownload.', variant: 'destructive' });
+    }
+  };
 
   const { getLabel: getSlotLabel } = useSlots();
 
@@ -491,15 +499,14 @@ export default function Dashboard() {
               <p className="font-bold text-foreground">Welkom, {myVolunteerName}!</p>
               <p className="text-sm text-muted-foreground">Je ziet hier jouw eigen ingeplande kantinediensten.</p>
             </div>
-            <a
-              href={`/api/volunteers/${myVolunteerId}/ical`}
-              download
+            <button
+              onClick={handleIcalDownload}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/20 hover:bg-primary/30 text-primary font-semibold text-sm transition-colors shrink-0"
               title="Download jouw diensten als agenda-bestand"
             >
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">iCal downloaden</span>
-            </a>
+            </button>
           </div>
         )}
 

@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { AuthGuard } from '@/contexts/auth-context';
-import { useListVolunteers, useDeleteVolunteer, type Volunteer } from '@workspace/api-client-react';
+import { useListVolunteers, useDeleteVolunteer } from '@/hooks/use-volunteers';
+import type { Volunteer } from '@/lib/types';
 import { Plus, Trash2, Edit2, Search, Mail, Phone, Users, AlertCircle, CalendarDays, Lock, ShieldAlert, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -9,6 +10,8 @@ import { VolunteerDialog } from '@/components/volunteer-dialog';
 import { useSlots } from '@/hooks/use-slots';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import * as XLSX from 'xlsx';
+import { generateIcal, downloadIcal } from '@/utils/ical';
+import { importVolunteersFromExcel } from '@/utils/volunteer-importer';
 
 export default function Volunteers() {
   const [search, setSearch] = useState('');
@@ -42,10 +45,19 @@ export default function Volunteers() {
     if (window.confirm(`Weet je zeker dat je vrijwilliger ${name} wilt verwijderen? Dit kan niet ongedaan worden gemaakt.`)) {
       deleteVol({ id }, {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['/api/volunteers'] });
+          queryClient.invalidateQueries({ queryKey: ['volunteers'] });
           toast({ title: "Verwijderd", description: "Vrijwilliger is verwijderd uit het systeem." });
         }
       });
+    }
+  };
+
+  const handleIcalDownload = async (vol: Volunteer) => {
+    try {
+      const content = await generateIcal(vol.id);
+      downloadIcal(content, `${vol.name}.ics`);
+    } catch {
+      toast({ title: 'Fout', description: 'Agenda kon niet worden gedownload.', variant: 'destructive' });
     }
   };
 
@@ -112,7 +124,7 @@ export default function Volunteers() {
                               </span>
                             )}
                             {vol.hasPassword && (
-                              <span title="Wachtwoord ingesteld">
+                              <span title="Heeft Supabase account">
                                 <Lock className="w-3.5 h-3.5 text-muted-foreground/60" />
                               </span>
                             )}
@@ -161,14 +173,13 @@ export default function Volunteers() {
                           )}
                         </td>
                         <td className="p-4 pr-6 text-right space-x-1">
-                          <a
-                            href={`/api/volunteers/${vol.id}/ical`}
-                            download
+                          <button
+                            onClick={() => handleIcalDownload(vol)}
                             title={`Agenda downloaden voor ${vol.name}`}
                             className="inline-flex p-2 rounded-lg text-muted-foreground hover:bg-emerald-50 hover:text-emerald-600 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
                           >
                             <CalendarDays className="w-5 h-5" />
-                          </a>
+                          </button>
                           <button
                             onClick={() => handleEdit(vol)}
                             className="p-2 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
@@ -193,7 +204,6 @@ export default function Volunteers() {
               <div className="md:hidden divide-y divide-border">
                 {filteredVols.map((vol) => (
                   <div key={vol.id} className="p-4 space-y-3">
-                    {/* Name + actions row */}
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-foreground text-base leading-tight">{vol.name}</span>
@@ -203,20 +213,19 @@ export default function Volunteers() {
                           </span>
                         )}
                         {vol.hasPassword && (
-                          <span title="Wachtwoord ingesteld">
+                          <span title="Heeft Supabase account">
                             <Lock className="w-3.5 h-3.5 text-muted-foreground/60" />
                           </span>
                         )}
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
-                        <a
-                          href={`/api/volunteers/${vol.id}/ical`}
-                          download
+                        <button
+                          onClick={() => handleIcalDownload(vol)}
                           title={`Agenda downloaden voor ${vol.name}`}
                           className="p-2 rounded-lg text-muted-foreground hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
                         >
                           <CalendarDays className="w-4 h-4" />
-                        </a>
+                        </button>
                         <button
                           onClick={() => handleEdit(vol)}
                           className="p-2 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
@@ -233,7 +242,6 @@ export default function Volunteers() {
                       </div>
                     </div>
 
-                    {/* Contact */}
                     {(vol.email || vol.phone) && (
                       <div className="space-y-1">
                         {vol.email && (
@@ -249,7 +257,6 @@ export default function Volunteers() {
                       </div>
                     )}
 
-                    {/* Availability */}
                     <div>
                       {vol.availability.length === 0 ? (
                         <div className="flex items-center gap-1.5 text-amber-600 text-xs font-semibold">
@@ -266,7 +273,6 @@ export default function Volunteers() {
                       )}
                     </div>
 
-                    {/* Group */}
                     {vol.groupMembers && vol.groupMembers.length > 0 && (
                       <div className="flex items-start gap-1.5">
                         <Users className="w-4 h-4 text-primary shrink-0 mt-0.5" />
@@ -339,7 +345,6 @@ function ImportVolunteersDialog({ isOpen, onClose }: { isOpen: boolean; onClose:
   };
 
   const downloadTemplate = () => {
-    const slotLabels = slots.map(s => s.label).join(', ');
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet([
       ['Naam', 'Email', 'Telefoon', 'Beschikbaarheid'],
@@ -356,14 +361,10 @@ function ImportVolunteersDialog({ isOpen, onClose }: { isOpen: boolean; onClose:
     if (!selectedFile) return;
     setIsLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      const resp = await fetch('/api/volunteers/import', { method: 'POST', body: formData });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error ?? 'Import mislukt');
-      setResult(data as ImportResult);
+      const data = await importVolunteersFromExcel(selectedFile, slots);
+      setResult(data);
       if (data.imported > 0) {
-        queryClient.invalidateQueries({ queryKey: ['/api/volunteers'] });
+        queryClient.invalidateQueries({ queryKey: ['volunteers'] });
       }
     } catch (err: any) {
       toast({ title: 'Import mislukt', description: err.message, variant: 'destructive' });
@@ -383,7 +384,6 @@ function ImportVolunteersDialog({ isOpen, onClose }: { isOpen: boolean; onClose:
         </DialogHeader>
 
         <div className="space-y-5 pt-2">
-          {/* Format info */}
           <div className="bg-blue-50 text-blue-900 p-4 rounded-xl text-sm border border-blue-100">
             <h4 className="font-bold mb-2 flex items-center gap-2">
               <FileSpreadsheet className="w-4 h-4" /> Bestandsformaat
@@ -406,7 +406,6 @@ function ImportVolunteersDialog({ isOpen, onClose }: { isOpen: boolean; onClose:
             </button>
           </div>
 
-          {/* File drop zone */}
           {!result && (
             <div>
               <label
@@ -437,7 +436,6 @@ function ImportVolunteersDialog({ isOpen, onClose }: { isOpen: boolean; onClose:
             </div>
           )}
 
-          {/* Result */}
           {result && (
             <div className="space-y-3">
               <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50 border border-green-200">

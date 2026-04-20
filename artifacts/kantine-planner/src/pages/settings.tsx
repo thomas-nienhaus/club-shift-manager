@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { AuthGuard, useAuth } from '@/contexts/auth-context';
-import { useUpdateMyProfile, useGetVolunteer } from '@workspace/api-client-react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useGetVolunteer } from '@/hooks/use-volunteers';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 import { User, Mail, Phone, Lock, Eye, EyeOff, Save } from 'lucide-react';
 
 export default function Settings() {
@@ -20,9 +21,36 @@ export default function Settings() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
-  const { mutate: updateProfile, isPending } = useUpdateMyProfile();
-  const { data: volunteer } = useGetVolunteer(volunteerId ?? 0, {
-    query: { enabled: !!volunteerId },
+  const { data: volunteer } = useGetVolunteer(volunteerId ?? 0, { query: { enabled: !!volunteerId } });
+
+  const { mutate: updateProfile, isPending } = useMutation({
+    mutationFn: async (data: { name: string; email: string | null; phone: string | null; password?: string }) => {
+      if (data.email) {
+        const { error } = await supabase.auth.updateUser({ email: data.email });
+        if (error) throw new Error(error.message);
+      }
+      if (data.password) {
+        const { error } = await supabase.auth.updateUser({ password: data.password });
+        if (error) throw new Error(error.message);
+      }
+      if (volunteerId) {
+        const { error } = await supabase
+          .from('volunteers')
+          .update({ name: data.name, phone: data.phone ?? null })
+          .eq('id', volunteerId);
+        if (error) throw new Error(error.message);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['volunteers'] });
+      setNewPassword('');
+      setConfirmPassword('');
+      toast({ title: 'Opgeslagen', description: 'Je gegevens zijn bijgewerkt.' });
+    },
+    onError: (err: any) => {
+      const msg = err?.message ?? 'Er is een fout opgetreden.';
+      toast({ title: 'Fout', description: msg, variant: 'destructive' });
+    },
   });
 
   useEffect(() => {
@@ -46,24 +74,11 @@ export default function Settings() {
       return;
     }
 
-    const data: Record<string, string | null> = {
+    updateProfile({
       name,
       email: email || null,
       phone: phone || null,
-    };
-    if (newPassword) data.password = newPassword;
-
-    updateProfile({ data }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
-        setNewPassword('');
-        setConfirmPassword('');
-        toast({ title: 'Opgeslagen', description: 'Je gegevens zijn bijgewerkt.' });
-      },
-      onError: (err: any) => {
-        const msg = err?.response?.data?.error ?? err?.message ?? 'Er is een fout opgetreden.';
-        toast({ title: 'Fout', description: msg, variant: 'destructive' });
-      },
+      ...(newPassword ? { password: newPassword } : {}),
     });
   };
 

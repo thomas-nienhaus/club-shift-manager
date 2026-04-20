@@ -1,9 +1,9 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "pnpm install --frozen-lockfile && pnpm --filter @workspace/db run push && PORT=3000 BASE_PATH=/ NODE_ENV=production pnpm run build"
+buildCommand = "pnpm install --frozen-lockfile && BASE_PATH=/ pnpm --filter @workspace/kantine-planner build"
 
 [deploy]
-startCommand = "node artifacts/api-server/dist/index.cjs"
-healthcheckPath = "/api/healthz"
+startCommand = "pnpm --filter @workspace/kantine-planner serve"
+healthcheckPath = "/"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3

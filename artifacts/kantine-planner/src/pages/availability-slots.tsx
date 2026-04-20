@@ -6,8 +6,8 @@ import {
   useCreateAvailabilitySlot,
   useUpdateAvailabilitySlot,
   useDeleteAvailabilitySlot,
-  type AvailabilitySlot,
-} from '@workspace/api-client-react';
+} from '@/hooks/use-availability-slots';
+import type { AvailabilitySlot } from '@/lib/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Edit2, GripVertical, Check, X } from 'lucide-react';
@@ -56,7 +56,7 @@ function SlotFormModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const invalidate = () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/availability-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['availability-slots'] });
     };
     const times = {
       startTime: form.startTime || null,
@@ -167,7 +167,7 @@ export default function AvailabilitySlotsPage() {
     if (window.confirm(`Weet je zeker dat je het dagdeel "${slot.label}" wilt verwijderen? Bestaande diensten met dit dagdeel blijven bestaan.`)) {
       deleteSlot({ id: slot.id }, {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['/api/availability-slots'] });
+          queryClient.invalidateQueries({ queryKey: ['availability-slots'] });
           toast({ title: 'Verwijderd', description: `${slot.label} is verwijderd.` });
         },
         onError: (e: any) => toast({ title: 'Fout', description: e.message, variant: 'destructive' }),
@@ -177,7 +177,7 @@ export default function AvailabilitySlotsPage() {
 
   const toggleActive = (slot: AvailabilitySlot) => {
     updateSlot({ id: slot.id, data: { isActive: !slot.isActive } }, {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/availability-slots'] }),
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['availability-slots'] }),
       onError: (e: any) => toast({ title: 'Fout', description: e.message, variant: 'destructive' }),
     });
   };
@@ -280,7 +280,6 @@ export default function AvailabilitySlotsPage() {
               <div className="md:hidden divide-y divide-border">
                 {sorted.map((slot) => (
                   <div key={slot.id} className="p-4 space-y-2">
-                    {/* Label + actions */}
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <GripVertical className="w-4 h-4 text-muted-foreground opacity-40 shrink-0" />
@@ -303,7 +302,6 @@ export default function AvailabilitySlotsPage() {
                       </div>
                     </div>
 
-                    {/* Key + time + status row */}
                     <div className="flex items-center justify-between gap-2 pl-6">
                       <div className="flex flex-col gap-0.5 min-w-0">
                         <span className="font-mono text-xs text-muted-foreground">{slot.key}</span>

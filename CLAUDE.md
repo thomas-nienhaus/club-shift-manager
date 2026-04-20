@@ -4,20 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Club Shift Manager ("Kantine Planner") is a full-stack monorepo for managing volunteer shifts at a Dutch football club. It features session-based auth, volunteer management, shift scheduling (including auto round-robin assignment), availability tracking, and Excel import/export. UI text and domain language are in Dutch.
+Club Shift Manager ("Kantine Planner") is a static React SPA for managing volunteer shifts at a Dutch football club. It uses Supabase as the backend (PostgreSQL + Row Level Security + Auth). Features: volunteer management, shift scheduling (including auto round-robin assignment), availability tracking, iCal export, and Excel import/export. UI text and domain language are in Dutch.
 
-## Monorepo Structure
+## Structure
 
 ```
 artifacts/
-  api-server/        # Express 5 API server (port 8080)
-  kantine-planner/   # React 19 SPA (Vite, port 5000 in dev)
+  kantine-planner/   # React 19 SPA (Vite)
 
-lib/
-  db/                # Drizzle ORM schema + PostgreSQL connection
-  api-spec/          # OpenAPI YAML spec (source of truth for the API contract)
-  api-client-react/  # Generated React Query hooks (do not edit directly)
-  api-zod/           # Generated Zod schemas (do not edit directly)
+supabase/
+  migrations/        # PostgreSQL schema with RLS policies
+  seed.sql           # Initial availability slots
 ```
 
 `pnpm` workspaces are enforced — npm and yarn are blocked by a preinstall script.
@@ -30,67 +27,65 @@ Run from the repo root unless noted.
 # Install dependencies
 pnpm install
 
-# Type-check all workspaces
+# Type-check frontend
 pnpm typecheck
 
-# Start API server in dev mode (hot reload via tsx)
-pnpm --filter @workspace/api-server dev
-
-# Start frontend dev server
+# Start frontend dev server (requires .env with Supabase keys)
 pnpm --filter @workspace/kantine-planner dev
 
-# Build everything (typecheck + esbuild + Vite)
+# Build for production
 pnpm build
-
-# Push DB schema changes (Drizzle Kit)
-pnpm --filter @workspace/db push
-
-# Regenerate API client and Zod schemas from OpenAPI spec
-pnpm --filter @workspace/api-spec codegen
 ```
 
 There are no automated tests — TypeScript strict mode serves as the primary correctness check.
 
-## API Contract Workflow
-
-The OpenAPI spec at `lib/api-spec/openapi.yaml` is the source of truth. When adding or changing endpoints:
-1. Update `openapi.yaml`
-2. Run `pnpm --filter @workspace/api-spec codegen` to regenerate `lib/api-client-react` and `lib/api-zod`
-3. Implement the route in `artifacts/api-server/src/routes/`
-4. The frontend consumes the generated React Query hooks from `@workspace/api-client-react`
-
-Never manually edit files in `lib/api-client-react/src/generated/` or `lib/api-zod/src/generated/`.
-
 ## Architecture
 
-**Data flow:** PostgreSQL → Drizzle ORM (`lib/db`) → Express routes (`artifacts/api-server/src/routes/`) → OpenAPI spec → generated Zod validators + React Query hooks → React pages/components.
+**Data flow:** Supabase PostgreSQL → `@supabase/supabase-js` client → local React Query hooks (`src/hooks/`) → React pages/components.
 
-**Auth:** Session-based using signed HTTP-only cookies (`SESSION_SECRET` env var). The `useAuth()` context hook exposes the current user. Wrap protected pages with `<AuthGuard>` (pass `requireAdmin` for admin-only routes).
+**Auth:** Supabase Auth (email + password). The `useAuth()` context hook exposes the current user. Wrap protected pages with `<AuthGuard>` (pass `requireAdmin` for admin-only routes). Volunteers are linked to auth users via `auth_id UUID` column in the `volunteers` table.
 
 **State management:** TanStack React Query for all server state. No Redux or Zustand. Local `useState` for UI-only state (modals, filters).
 
 **Routing:** Wouter (client-side). Routes are defined in `artifacts/kantine-planner/src/App.tsx`.
 
-**DB schema:** `lib/db/src/schema/` — tables include `volunteers`, `shifts`, `assignments`, `availability_slots`, `seasons`, `volunteer_groups`, `volunteer_availability`, `volunteer_pairs`. Drizzle-zod generates insert/select types from the schema.
+**Types:** Centralized in `src/lib/types.ts` — `Volunteer`, `ShiftWithAssignments`, `Season`, `AvailabilitySlot`, `CurrentUser`, etc.
 
-**Production build:** esbuild bundles the API server to `artifacts/api-server/dist/index.cjs`; Vite outputs the frontend to `artifacts/kantine-planner/dist/`. In production, the API server serves the frontend as static files.
+**Hooks:** `src/hooks/` — one file per resource (`use-volunteers.ts`, `use-shifts.ts`, `use-seasons.ts`, `use-availability-slots.ts`). Query keys use semantic arrays: `['volunteers']`, `['shifts', params]`, `['seasons']`, `['availability-slots']`.
+
+**Client-side utilities:**
+- `src/utils/auto-schedule.ts` — `runAutoSchedule({ seasonId? })` round-robin assignment
+- `src/utils/season-generator.ts` — `generateSeasonShifts(seasonId)` shift generation
+- `src/utils/ical.ts` — `generateIcal(volunteerId)` + `downloadIcal(content, filename)`
+- `src/utils/volunteer-importer.ts` — `importVolunteersFromExcel(file, slotLabels)`
+- `src/utils/season-importer.ts` — `importSeasonSchedule(seasonId, file)`
+
+**Production build:** Vite outputs the frontend to `artifacts/kantine-planner/dist/`. The Railway deployment serves this via `vite preview`.
 
 ## Environment Variables
 
 | Variable | Required | Description |
 |---|---|---|
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `SESSION_SECRET` | Yes | Secret for signing session cookies |
-| `PORT` | Yes | API server port (8080 in prod, 5000 for frontend dev) |
-| `BASE_PATH` | Yes (frontend) | Vite base path (usually `/`) |
-| `NODE_ENV` | No | `production` enables static file serving from API |
+| `VITE_SUPABASE_URL` | Yes | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Yes | Supabase anonymous/public key |
+| `BASE_PATH` | Yes | Vite base path (usually `/`) |
 
-Vite throws an error if `PORT` or `BASE_PATH` are not set. Copy `.env.example` for local dev.
+Copy `.env.example` for local dev. The `VITE_` prefix exposes vars to the browser bundle.
+
+## Supabase Setup
+
+1. Run `supabase/migrations/001_schema.sql` to create all tables with RLS
+2. Run `supabase/seed.sql` to insert default availability slots
+3. Create auth users via Supabase dashboard, then link them:
+   ```sql
+   UPDATE volunteers SET auth_id = '<uuid-from-auth.users>' WHERE email = 'user@example.com';
+   ```
+4. Admin access: set `is_admin = true` on the volunteer record
 
 ## Key Conventions
 
-- **Password hashing:** Node.js `crypto.scrypt` with a random salt, stored as `salt:hash` in the DB.
-- **Excel import:** XLSX library used for bulk-importing volunteers and seasons. Import endpoints are `POST /volunteers/import-excel` and `POST /seasons/:id/import`.
-- **Auto-scheduling:** `POST /shifts/auto-schedule` implements a round-robin assignment algorithm.
-- **TypeScript:** Strict mode (`noImplicitAny`, `strictNullChecks`). Workspaces use `references` for incremental builds.
+- **Admin passwords:** Admins cannot set passwords for other users (Supabase Admin API requires service_role key). Users authenticate themselves or are invited via Supabase dashboard.
+- **Excel import:** XLSX library used for bulk-importing volunteers and season schedules.
+- **Auto-scheduling:** `runAutoSchedule()` in `src/utils/auto-schedule.ts` implements round-robin assignment.
+- **TypeScript:** Strict mode (`noImplicitAny`, `strictNullChecks`).
 - **UI:** shadcn/ui components (Radix UI + Tailwind CSS v4). Components live in `artifacts/kantine-planner/src/components/ui/`. Forms use React Hook Form + Zod resolvers.

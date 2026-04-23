@@ -7,4 +7,9 @@ if (!url || !key) {
   throw new Error('VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in .env');
 }
 
+// Must run before createClient — Supabase removes the hash after processing it
+if (typeof window !== 'undefined' && window.location.hash.includes('type=invite')) {
+  sessionStorage.setItem('pending_invite_setup', 'true');
+}
+
 export const supabase = createClient(url, key);

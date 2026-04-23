@@ -12,6 +12,7 @@ import Seasons from "@/pages/seasons";
 import Login from "@/pages/login";
 import AvailabilitySlots from "@/pages/availability-slots";
 import Settings from "@/pages/settings";
+import SetPassword from "@/pages/set-password";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/volunteers" component={Volunteers} />
       <Route path="/availability-slots" component={AvailabilitySlots} />
       <Route path="/settings" component={Settings} />
+      <Route path="/set-password" component={SetPassword} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/auth-context';
 import { useLocation } from 'wouter';
-import { Mail, Eye, EyeOff, Lock } from 'lucide-react';
+import { Mail, Eye, EyeOff, Lock, ArrowLeft } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,6 +10,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isPending, setIsPending] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSent, setForgotSent] = useState(false);
 
   const [, setLocation] = useLocation();
   const { isAuthenticated } = useAuth();
@@ -33,6 +36,15 @@ export default function Login() {
     }
   };
 
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsPending(true);
+    const redirectTo = window.location.origin + (import.meta.env.BASE_URL ?? '/').replace(/\/$/, '') + '/set-password';
+    await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), { redirectTo });
+    setIsPending(false);
+    setForgotSent(true);
+  };
+
   return (
     <div className="min-h-screen w-full flex items-center justify-center relative bg-sidebar overflow-hidden">
       <div
@@ -47,63 +59,130 @@ export default function Login() {
             <span className="font-display font-extrabold text-5xl text-white">K</span>
           </div>
 
-          <h1 className="text-3xl font-display font-extrabold text-sidebar mb-2">Kantine Planner</h1>
-          <p className="text-sidebar/70 mb-8">Log in om het rooster te bekijken.</p>
+          {!showForgot ? (
+            <>
+              <h1 className="text-3xl font-display font-extrabold text-sidebar mb-2">Kantine Planner</h1>
+              <p className="text-sidebar/70 mb-8">Log in om het rooster te bekijken.</p>
 
-          <form onSubmit={handleSubmit} className="space-y-5 text-left">
-            {error && (
-              <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl text-sm font-bold text-center">
-                {error}
-              </div>
-            )}
+              <form onSubmit={handleSubmit} className="space-y-5 text-left">
+                {error && (
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl text-sm font-bold text-center">
+                    {error}
+                  </div>
+                )}
 
-            <div>
-              <label className="block text-sm font-bold text-sidebar mb-2">E-mailadres</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-sidebar/40 w-5 h-5" />
-                <input
-                  type="email"
-                  required
-                  autoFocus
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 bg-white/50 border-2 border-sidebar/10 rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all text-sidebar font-semibold"
-                  placeholder="naam@voorbeeld.nl"
-                />
-              </div>
-            </div>
+                <div>
+                  <label className="block text-sm font-bold text-sidebar mb-2">E-mailadres</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-sidebar/40 w-5 h-5" />
+                    <input
+                      type="email"
+                      required
+                      autoFocus
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      className="w-full pl-11 pr-4 py-3 bg-white/50 border-2 border-sidebar/10 rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all text-sidebar font-semibold"
+                      placeholder="naam@voorbeeld.nl"
+                    />
+                  </div>
+                </div>
 
-            <div>
-              <label className="block text-sm font-bold text-sidebar mb-2">Wachtwoord</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-sidebar/40 w-5 h-5" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="w-full pl-11 pr-12 py-3 bg-white/50 border-2 border-sidebar/10 rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all text-sidebar font-semibold"
-                  placeholder="••••••••"
-                />
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-bold text-sidebar">Wachtwoord</label>
+                    <button
+                      type="button"
+                      onClick={() => { setShowForgot(true); setForgotEmail(email); }}
+                      className="text-xs font-semibold text-primary hover:underline"
+                    >
+                      Wachtwoord vergeten?
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-sidebar/40 w-5 h-5" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      className="w-full pl-11 pr-12 py-3 bg-white/50 border-2 border-sidebar/10 rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all text-sidebar font-semibold"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(v => !v)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-sidebar/40 hover:text-sidebar/70 transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+
                 <button
-                  type="button"
-                  onClick={() => setShowPassword(v => !v)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-sidebar/40 hover:text-sidebar/70 transition-colors"
-                  tabIndex={-1}
+                  type="submit"
+                  disabled={isPending}
+                  className="w-full py-4 rounded-xl font-bold text-lg bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-1 transition-all duration-200 mt-4 disabled:opacity-50 disabled:pointer-events-none"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {isPending ? 'Inloggen...' : 'Inloggen'}
                 </button>
-              </div>
-            </div>
+              </form>
+            </>
+          ) : (
+            <>
+              <h1 className="text-3xl font-display font-extrabold text-sidebar mb-2">Wachtwoord vergeten</h1>
+              <p className="text-sidebar/70 mb-8">Vul je e-mailadres in en we sturen je een reset-link.</p>
 
-            <button
-              type="submit"
-              disabled={isPending}
-              className="w-full py-4 rounded-xl font-bold text-lg bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-1 transition-all duration-200 mt-4 disabled:opacity-50 disabled:pointer-events-none"
-            >
-              {isPending ? 'Inloggen...' : 'Inloggen'}
-            </button>
-          </form>
+              {forgotSent ? (
+                <div className="space-y-5">
+                  <div className="p-4 bg-primary/10 border border-primary/20 text-primary rounded-xl text-sm font-semibold">
+                    Als dit e-mailadres bekend is, ontvang je binnen enkele minuten een reset-link.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setShowForgot(false); setForgotSent(false); }}
+                    className="flex items-center gap-2 mx-auto text-sm font-semibold text-sidebar/60 hover:text-sidebar transition-colors"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Terug naar inloggen
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleForgot} className="space-y-5 text-left">
+                  <div>
+                    <label className="block text-sm font-bold text-sidebar mb-2">E-mailadres</label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-sidebar/40 w-5 h-5" />
+                      <input
+                        type="email"
+                        required
+                        autoFocus
+                        value={forgotEmail}
+                        onChange={e => setForgotEmail(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3 bg-white/50 border-2 border-sidebar/10 rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all text-sidebar font-semibold"
+                        placeholder="naam@voorbeeld.nl"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isPending}
+                    className="w-full py-4 rounded-xl font-bold text-lg bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-1 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    {isPending ? 'Bezig...' : 'Reset-link versturen'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowForgot(false)}
+                    className="flex items-center gap-2 mx-auto text-sm font-semibold text-sidebar/60 hover:text-sidebar transition-colors"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Terug naar inloggen
+                  </button>
+                </form>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

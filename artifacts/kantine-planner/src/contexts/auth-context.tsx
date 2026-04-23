@@ -49,8 +49,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         loadCurrentUser(session.user.id, session.user.email!).then(setUser);
-        if (event === 'SIGNED_IN' && sessionStorage.getItem('pending_invite_setup')) {
-          sessionStorage.removeItem('pending_invite_setup');
+        if ((event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') && sessionStorage.getItem('pending_password_setup')) {
+          sessionStorage.removeItem('pending_password_setup');
           window.location.replace(window.location.origin + window.location.pathname.replace(/\/$/, '') + '/set-password');
         }
       } else {

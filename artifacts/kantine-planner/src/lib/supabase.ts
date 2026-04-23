@@ -8,8 +8,11 @@ if (!url || !key) {
 }
 
 // Must run before createClient — Supabase removes the hash after processing it
-if (typeof window !== 'undefined' && window.location.hash.includes('type=invite')) {
-  sessionStorage.setItem('pending_invite_setup', 'true');
+if (typeof window !== 'undefined' && (
+  window.location.hash.includes('type=invite') ||
+  window.location.hash.includes('type=recovery')
+)) {
+  sessionStorage.setItem('pending_password_setup', 'true');
 }
 
 export const supabase = createClient(url, key);

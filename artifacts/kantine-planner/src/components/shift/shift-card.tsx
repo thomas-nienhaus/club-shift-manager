@@ -3,7 +3,7 @@ import { useDeleteShift, useUnassignVolunteer } from '@/hooks/use-shifts';
 import type { ShiftWithAssignments } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useSlots } from '@/hooks/use-slots';
-import { Users, Trash2, Edit2, UserPlus, X, RefreshCw, Clock } from 'lucide-react';
+import { Users, Trash2, Edit2, UserPlus, X, RefreshCw, Clock, ArrowLeftRight } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 
@@ -13,6 +13,9 @@ interface ShiftCardProps {
   shift: ShiftWithAssignments;
   onEdit: (shift: ShiftWithAssignments) => void;
   onAssign: (shift: ShiftWithAssignments) => void;
+  onOffer?: (shift: ShiftWithAssignments) => void;
+  myVolunteerId?: number | null;
+  hasOpenOffer?: boolean;
 }
 
 function formatTimeRange(startTime?: string | null, endTime?: string | null): string | null {
@@ -22,7 +25,7 @@ function formatTimeRange(startTime?: string | null, endTime?: string | null): st
   return null;
 }
 
-export function ShiftCard({ shift, onEdit, onAssign }: ShiftCardProps) {
+export function ShiftCard({ shift, onEdit, onAssign, onOffer, myVolunteerId, hasOpenOffer }: ShiftCardProps) {
   const { isAdmin } = useAuth();
   const { toast } = useToast();
   const { getLabel } = useSlots();
@@ -30,6 +33,9 @@ export function ShiftCard({ shift, onEdit, onAssign }: ShiftCardProps) {
 
   const { mutate: deleteShift, isPending: isDeleting } = useDeleteShift();
   const { mutate: unassignVolunteer, isPending: isUnassigning } = useUnassignVolunteer();
+
+  const isMyShift = !!myVolunteerId && shift.assignments.some(a => a.volunteerId === myVolunteerId);
+  const isFuture = new Date(shift.date) >= new Date(new Date().toDateString());
 
   const isPlaceholder = shift.notes === PLACEHOLDER_NOTE;
 
@@ -84,7 +90,12 @@ export function ShiftCard({ shift, onEdit, onAssign }: ShiftCardProps) {
         <div className="flex items-center gap-2">
           <div className="p-2 rounded-lg bg-primary/10 text-primary"><Users className="w-5 h-5" /></div>
           <div>
-            <h3 className="font-display font-bold text-lg leading-tight">{getLabel(shift.slot)}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-display font-bold text-lg leading-tight">{getLabel(shift.slot)}</h3>
+              {hasOpenOffer && (
+                <span className="text-xs bg-primary/20 text-primary font-bold px-2 py-0.5 rounded-full no-print">Aangeboden</span>
+              )}
+            </div>
             {timeRange && <p className="text-xs font-semibold text-primary/70 flex items-center gap-1 mt-0.5"><Clock className="w-3 h-3" />{timeRange}</p>}
             <p className="text-sm font-semibold text-muted-foreground">
               {shift.assignments.length === 0 ? 'Nog niemand ingedeeld' : `${shift.assignments.length} vrijwilliger${shift.assignments.length !== 1 ? 's' : ''} ingedeeld`}
@@ -126,6 +137,14 @@ export function ShiftCard({ shift, onEdit, onAssign }: ShiftCardProps) {
         <div className="p-4 border-t bg-muted/10 rounded-b-xl no-print">
           <button onClick={() => onAssign(shift)} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all border border-primary/20 hover:border-primary shadow-sm">
             <UserPlus className="w-4 h-4" />Vrijwilliger Indelen
+          </button>
+        </div>
+      )}
+
+      {!isAdmin && onOffer && isMyShift && isFuture && !hasOpenOffer && (
+        <div className="p-4 border-t bg-muted/10 rounded-b-xl no-print">
+          <button onClick={() => onOffer(shift)} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all border border-primary/20 hover:border-primary shadow-sm">
+            <ArrowLeftRight className="w-4 h-4" />Dienst Aanbieden
           </button>
         </div>
       )}

@@ -9,11 +9,14 @@ import { format, addWeeks, subWeeks, startOfWeek, endOfWeek, parseISO } from 'da
 import { nl } from 'date-fns/locale';
 import {
   ChevronLeft, ChevronRight, Plus, Printer, Calendar as CalendarIcon,
-  List as ListIcon, Shuffle, X, AlertCircle, Settings2, User, Download,
+  List as ListIcon, Shuffle, X, AlertCircle, Settings2, User, Download, ArrowLeftRight,
 } from 'lucide-react';
 import { ShiftCard } from '@/components/shift/shift-card';
 import { ShiftFormModal } from '@/components/shift/shift-form-modal';
 import { AssignModal } from '@/components/shift/assign-modal';
+import { OfferResponseModal } from '@/components/shift/offer-response-modal';
+import { useListShiftOffers, useCreateShiftOffer, useAcceptOfferResponse, useDeclineOfferResponse } from '@/hooks/use-shift-offers';
+import type { ShiftOffer } from '@/lib/types';
 import { SLOT_ORDER } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { useSlots } from '@/hooks/use-slots';
@@ -349,10 +352,16 @@ function ShiftsGrid({
   groupedShifts,
   onEdit,
   onAssign,
+  onOffer,
+  myVolunteerId,
+  openOfferShiftIds,
 }: {
   groupedShifts: Record<string, ShiftWithAssignments[]>;
   onEdit: (s: ShiftWithAssignments) => void;
   onAssign: (s: ShiftWithAssignments) => void;
+  onOffer?: (s: ShiftWithAssignments) => void;
+  myVolunteerId?: number | null;
+  openOfferShiftIds?: Set<number>;
 }) {
   const sortedDates = Object.keys(groupedShifts).sort();
   if (sortedDates.length === 0) return (
@@ -374,7 +383,15 @@ function ShiftsGrid({
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {dayShifts.map(shift => (
-                <ShiftCard key={shift.id} shift={shift} onEdit={onEdit} onAssign={onAssign} />
+                <ShiftCard
+                  key={shift.id}
+                  shift={shift}
+                  onEdit={onEdit}
+                  onAssign={onAssign}
+                  onOffer={onOffer}
+                  myVolunteerId={myVolunteerId}
+                  hasOpenOffer={openOfferShiftIds?.has(shift.id) ?? false}
+                />
               ))}
             </div>
           </div>
@@ -401,6 +418,9 @@ export default function Dashboard() {
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [activePrintFilters, setActivePrintFilters] = useState<PrintFilters | null>(null);
 
+  const [isOfferResponseOpen, setIsOfferResponseOpen] = useState(false);
+  const [respondOffer, setRespondOffer] = useState<ShiftOffer | null>(null);
+
   // ── Data ──────────────────────────────────────────────────────────────────
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -411,6 +431,7 @@ export default function Dashboard() {
 
   const { data: shifts, isLoading } = useListShifts(screenParams);
   const { data: allShifts } = useListShifts({});
+  const { data: shiftOffers } = useListShiftOffers();
 
   // ── Grouped shifts for screen ─────────────────────────────────────────────
   const groupedShifts = useMemo(() => {
@@ -419,6 +440,27 @@ export default function Dashboard() {
   }, [shifts]);
 
   const sortedDates = Object.keys(groupedShifts).sort();
+
+  // ── Shift offer data ──────────────────────────────────────────────────────
+  const openOffersFromOthers = (shiftOffers ?? []).filter(
+    o => o.status === 'open' && o.volunteerId !== myVolunteerId
+  );
+  const myOffersWithPendingResponses = (shiftOffers ?? []).filter(
+    o => o.volunteerId === myVolunteerId && o.status === 'open' && o.responses.some(r => r.status === 'pending')
+  );
+  const myOpenOfferShiftIds = new Set(
+    (shiftOffers ?? [])
+      .filter(o => o.status === 'open' && o.volunteerId === myVolunteerId)
+      .map(o => o.shiftId)
+  );
+  const myFutureAssignedShifts = (allShifts ?? []).filter(
+    s => s.assignments.some(a => a.volunteerId === myVolunteerId) &&
+      new Date(s.date) >= new Date(new Date().toDateString())
+  );
+
+  const { mutate: createOffer } = useCreateShiftOffer();
+  const { mutate: acceptResponse } = useAcceptOfferResponse();
+  const { mutate: declineResponse } = useDeclineOfferResponse();
 
   // ── Filtered shifts for print ─────────────────────────────────────────────
   const printGroupedShifts = useMemo(() => {
@@ -459,6 +501,16 @@ export default function Dashboard() {
   const handleOpenEdit = (shift: ShiftWithAssignments) => { setEditShift(shift); setIsShiftModalOpen(true); };
   const handleOpenCreate = () => { setEditShift(null); setIsShiftModalOpen(true); };
   const handleOpenAssign = (shift: ShiftWithAssignments) => { setAssignShift(shift); setIsAssignModalOpen(true); };
+
+  const handleOffer = (shift: ShiftWithAssignments) => {
+    if (!myVolunteerId) return;
+    if (window.confirm(`Wil je jouw dienst op ${format(parseISO(shift.date), 'd MMMM', { locale: nl })} aanbieden aan andere vrijwilligers?`)) {
+      createOffer({ shiftId: shift.id, volunteerId: myVolunteerId }, {
+        onSuccess: () => toast({ title: 'Aangeboden', description: 'Jouw dienst is aangeboden aan andere vrijwilligers.' }),
+        onError: () => toast({ title: 'Fout', description: 'Kon de dienst niet aanbieden.', variant: 'destructive' }),
+      });
+    }
+  };
 
   const handleIcalDownload = async () => {
     if (!myVolunteerId) return;
@@ -504,6 +556,79 @@ export default function Dashboard() {
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">iCal downloaden</span>
             </button>
+          </div>
+        )}
+
+        {/* ── Open offers from others ── */}
+        {!isAdmin && myVolunteerId && openOffersFromOthers.length > 0 && (
+          <div className="bg-primary/5 border-2 border-primary/20 rounded-2xl p-5 mb-6 no-print">
+            <h2 className="font-display font-bold text-lg mb-3 flex items-center gap-2">
+              <ArrowLeftRight className="w-5 h-5 text-primary" />
+              Aangeboden diensten
+            </h2>
+            <ul className="space-y-2">
+              {openOffersFromOthers.map(offer => (
+                <li key={offer.id} className="flex items-center justify-between bg-white border border-border rounded-xl px-4 py-3 gap-3">
+                  <span className="text-sm font-semibold">
+                    <span className="text-primary">{offer.volunteer.name}</span> biedt aan:{' '}
+                    <span className="capitalize">{format(parseISO(offer.shift.date), 'd MMMM', { locale: nl })}</span>
+                    {' '}— {getSlotLabel(offer.shift.slot)}
+                  </span>
+                  <button
+                    onClick={() => { setRespondOffer(offer); setIsOfferResponseOpen(true); }}
+                    className="shrink-0 text-sm font-bold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                  >
+                    Reageren
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* ── Pending responses on my offers ── */}
+        {!isAdmin && myOffersWithPendingResponses.length > 0 && (
+          <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-5 mb-6 no-print">
+            <h2 className="font-display font-bold text-lg mb-3 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-amber-600" />
+              Reacties op jouw aanbiedingen
+            </h2>
+            <ul className="space-y-3">
+              {myOffersWithPendingResponses.flatMap(offer =>
+                offer.responses.filter(r => r.status === 'pending').map(response => (
+                  <li key={response.id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-amber-200 rounded-xl px-4 py-3 gap-3">
+                    <span className="text-sm font-semibold">
+                      <span className="text-amber-700">{response.responder.name}</span> wil jouw dienst op{' '}
+                      <span className="capitalize">{format(parseISO(offer.shift.date), 'd MMMM', { locale: nl })}</span>{' '}
+                      {response.type === 'takeover'
+                        ? 'overnemen'
+                        : <>ruilen voor zijn/haar dienst op <span className="capitalize">{format(parseISO(response.swapShift!.date), 'd MMMM', { locale: nl })}</span></>
+                      }
+                    </span>
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        onClick={() => acceptResponse(
+                          { responseId: response.id, type: response.type },
+                          { onSuccess: () => toast({ title: 'Geaccepteerd', description: 'De dienst is overgedragen.' }) }
+                        )}
+                        className="text-sm font-bold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                      >
+                        Accepteren
+                      </button>
+                      <button
+                        onClick={() => declineResponse(
+                          { responseId: response.id },
+                          { onSuccess: () => toast({ title: 'Geweigerd' }) }
+                        )}
+                        className="text-sm font-bold px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors"
+                      >
+                        Weigeren
+                      </button>
+                    </div>
+                  </li>
+                ))
+              )}
+            </ul>
           </div>
         )}
 
@@ -589,7 +714,14 @@ export default function Dashboard() {
               )}
             </div>
           ) : (
-            <ShiftsGrid groupedShifts={groupedShifts} onEdit={handleOpenEdit} onAssign={handleOpenAssign} />
+            <ShiftsGrid
+              groupedShifts={groupedShifts}
+              onEdit={handleOpenEdit}
+              onAssign={handleOpenAssign}
+              onOffer={myVolunteerId && !isAdmin ? handleOffer : undefined}
+              myVolunteerId={myVolunteerId}
+              openOfferShiftIds={myOpenOfferShiftIds}
+            />
           )}
         </div>
 
@@ -610,6 +742,16 @@ export default function Dashboard() {
           onClose={() => setIsPrintModalOpen(false)}
           onPrint={setActivePrintFilters}
         />
+
+        {myVolunteerId && (
+          <OfferResponseModal
+            isOpen={isOfferResponseOpen}
+            onClose={() => { setIsOfferResponseOpen(false); setRespondOffer(null); }}
+            offer={respondOffer}
+            myVolunteerId={myVolunteerId}
+            myShifts={myFutureAssignedShifts}
+          />
+        )}
 
         {isAdmin && (
           <>

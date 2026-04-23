@@ -415,11 +415,8 @@ export default function Dashboard() {
   // ── Grouped shifts for screen ─────────────────────────────────────────────
   const groupedShifts = useMemo(() => {
     if (!shifts) return {};
-    const visible = myVolunteerId && !isAdmin
-      ? shifts.filter(s => s.assignments.some(a => a.volunteerId === myVolunteerId))
-      : shifts;
-    return groupByDate(visible);
-  }, [shifts, myVolunteerId, isAdmin]);
+    return groupByDate(shifts);
+  }, [shifts]);
 
   const sortedDates = Object.keys(groupedShifts).sort();
 
@@ -497,7 +494,7 @@ export default function Dashboard() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-foreground">Welkom, {myVolunteerName}!</p>
-              <p className="text-sm text-muted-foreground">Je ziet hier jouw eigen ingeplande kantinediensten.</p>
+              <p className="text-sm text-muted-foreground">Download jouw persoonlijke diensten als agenda-bestand.</p>
             </div>
             <button
               onClick={handleIcalDownload}
@@ -515,7 +512,7 @@ export default function Dashboard() {
           <div>
             <h1 className="text-4xl font-display font-extrabold mb-2">Kantine Planning</h1>
             <p className="text-muted-foreground text-lg">
-              {myVolunteerId ? 'Jouw ingeplande bardiensten.' : 'Beheer en bekijk de bardiensten.'}
+              {'Bekijk de volledige kantine planning.'}
             </p>
           </div>
 

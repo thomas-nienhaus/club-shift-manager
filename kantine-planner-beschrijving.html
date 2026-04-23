@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kantine Planner — v.v. KCVO</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', Arial, sans-serif;
+      font-size: 11pt;
+      color: #1a1a1a;
+      background: #fff;
+      padding: 0;
+    }
+
+    .page {
+      max-width: 740px;
+      margin: 0 auto;
+      padding: 48px 40px;
+    }
+
+    /* Header */
+    .header {
+      background: #141414;
+      color: #fff;
+      border-radius: 12px;
+      padding: 32px 40px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 36px;
+    }
+    .header img {
+      width: 72px;
+      height: 72px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+    .header-text h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22pt;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+    .header-text p {
+      color: rgba(255,255,255,0.55);
+      font-size: 10pt;
+    }
+
+    /* Intro */
+    .intro {
+      background: #f7f7f7;
+      border-left: 4px solid #2e9e52;
+      border-radius: 0 8px 8px 0;
+      padding: 16px 20px;
+      margin-bottom: 36px;
+      font-size: 10.5pt;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    /* Sections */
+    section {
+      margin-bottom: 32px;
+    }
+
+    h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 13pt;
+      font-weight: 700;
+      color: #141414;
+      border-bottom: 2px solid #2e9e52;
+      padding-bottom: 6px;
+      margin-bottom: 14px;
+    }
+
+    h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 10.5pt;
+      font-weight: 700;
+      color: #2e9e52;
+      margin: 16px 0 6px;
+    }
+
+    ul {
+      padding-left: 18px;
+      line-height: 1.8;
+      color: #333;
+    }
+
+    ul li {
+      margin-bottom: 2px;
+    }
+
+    strong {
+      color: #141414;
+      font-weight: 600;
+    }
+
+    /* Role cards */
+    .role-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .role-card {
+      border: 2px solid #e8e8e8;
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+    .role-card.admin { border-color: #141414; }
+    .role-card.volunteer { border-color: #2e9e52; }
+    .role-card h3 {
+      margin-top: 0;
+      font-size: 10pt;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .role-card.admin h3 { color: #141414; }
+    .role-card ul { font-size: 9.5pt; }
+
+    /* Tech table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9.5pt;
+      margin-top: 8px;
+    }
+    th {
+      background: #141414;
+      color: #fff;
+      text-align: left;
+      padding: 8px 12px;
+      font-weight: 600;
+    }
+    td {
+      padding: 7px 12px;
+      border-bottom: 1px solid #eee;
+      color: #333;
+    }
+    tr:nth-child(even) td { background: #f9f9f9; }
+
+    /* Footer */
+    .footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid #e8e8e8;
+      font-size: 9pt;
+      color: #999;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    @media print {
+      body { background: white; }
+      .page { padding: 24px 28px; }
+      .header { border-radius: 8px; }
+      h2 { break-after: avoid; }
+      section { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Header -->
+    <div class="header">
+      <img src="https://dtohsihpvasoukshnmjl.supabase.co/storage/v1/object/public/public-assets/KCVO.png" alt="KCVO logo" />
+      <div class="header-text">
+        <h1>Kantine Planner</h1>
+        <p>v.v. KCVO Vaassen &nbsp;·&nbsp; Applicatiebeschrijving &nbsp;·&nbsp; April 2026</p>
+      </div>
+    </div>
+
+    <!-- Intro -->
+    <div class="intro">
+      Een webapplicatie voor het beheren van kantinediensten bij voetbalclub v.v. KCVO in Vaassen. Vrijwilligers kunnen hun rooster bekijken en beheerders kunnen het volledige planningsproces afhandelen — van vrijwilligersbeheer tot automatische indeling.
+    </div>
+
+    <!-- Rollen -->
+    <section>
+      <h2>Gebruikersrollen</h2>
+      <div class="role-grid">
+        <div class="role-card admin">
+          <h3>Beheerder</h3>
+          <ul>
+            <li>Volledige toegang tot alle functies</li>
+            <li>Vrijwilligers beheren</li>
+            <li>Seizoenen en diensten plannen</li>
+            <li>Automatische indeling uitvoeren</li>
+            <li>Uitnodigingen versturen</li>
+          </ul>
+        </div>
+        <div class="role-card volunteer">
+          <h3>Vrijwilliger</h3>
+          <ul>
+            <li>Eigen rooster bekijken</li>
+            <li>Agenda exporteren (iCal)</li>
+            <li>Persoonlijke gegevens aanpassen</li>
+            <li>Wachtwoord wijzigen</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Toegang -->
+    <section>
+      <h2>Toegang &amp; Accounts</h2>
+      <ul>
+        <li><strong>Inloggen</strong> via e-mailadres en wachtwoord</li>
+        <li><strong>Wachtwoord vergeten</strong> — stuurt een reset-link per e-mail; vrijwilliger stelt zelf nieuw wachtwoord in</li>
+        <li><strong>Uitnodigingen</strong> — beheerder nodigt vrijwilliger uit via e-mail; vrijwilliger klikt op de link en stelt een wachtwoord in</li>
+        <li><strong>Beheerdersrechten</strong> zijn alleen toe te kennen aan vrijwilligers met een actief account</li>
+        <li>Uitnodigingslinks zijn <strong>24 uur geldig</strong> (instelbaar in Supabase)</li>
+      </ul>
+    </section>
+
+    <!-- Vrijwilligers -->
+    <section>
+      <h2>Vrijwilligersbeheer</h2>
+
+      <h3>Gegevens per vrijwilliger</h3>
+      <ul>
+        <li>Naam, e-mailadres, telefoonnummer</li>
+        <li>Beschikbaarheid per dagdeel (bijv. Woensdagavond, Zaterdagmiddag)</li>
+        <li>Groepslidmaatschap — groepsleden worden altijd samen ingepland (max. 5 personen)</li>
+        <li>Beheerdersrechten (aan/uit)</li>
+      </ul>
+
+      <h3>Acties</h3>
+      <ul>
+        <li>Vrijwilliger toevoegen, bewerken of verwijderen</li>
+        <li><strong>Uitnodiging versturen</strong> — knop zichtbaar per vrijwilliger zonder account</li>
+        <li><strong>Account-badge</strong> — toont direct of een vrijwilliger al een actief account heeft</li>
+        <li><strong>Bulkimport via Excel</strong> (.xlsx) — naam, e-mail, telefoon en beschikbaarheid in één keer importeren</li>
+        <li><strong>iCal downloaden</strong> per vrijwilliger — agenda met alle geplande diensten</li>
+      </ul>
+    </section>
+
+    <!-- Planning -->
+    <section>
+      <h2>Planning &amp; Rooster</h2>
+
+      <h3>Seizoenen</h3>
+      <ul>
+        <li>Seizoenen aanmaken met start- en einddatum</li>
+        <li>Automatisch diensten genereren voor een heel seizoen op basis van de beschikbare dagdelen</li>
+        <li>Seizoensrooster importeren via Excel</li>
+      </ul>
+
+      <h3>Dagdelen</h3>
+      <ul>
+        <li>Beschikbare dagdelen (tijdslots) aanmaken en beheren</li>
+        <li>Worden gebruikt bij vrijwilligersbeschikbaarheid en dienstindeling</li>
+      </ul>
+
+      <h3>Dashboard</h3>
+      <ul>
+        <li>Volledig roosteroverzicht per week en seizoen</li>
+        <li>Diensten handmatig aanmaken, bewerken en verwijderen</li>
+        <li>Vrijwilligers handmatig aan diensten koppelen</li>
+        <li><strong>Automatische indeling</strong> — round-robin algoritme deelt vrijwilligers eerlijk in op basis van beschikbaarheid en groepslidmaatschap</li>
+        <li>Rooster afdrukken (geoptimaliseerde printweergave)</li>
+      </ul>
+    </section>
+
+    <!-- Vrijwilligers functies -->
+    <section>
+      <h2>Functies voor Vrijwilligers</h2>
+      <ul>
+        <li>Eigen rooster bekijken op het dashboard</li>
+        <li><strong>iCal exporteren</strong> — diensten importeren in Google Agenda, Outlook of Apple Agenda</li>
+        <li><strong>Instellingen</strong> — naam, e-mailadres en wachtwoord wijzigen</li>
+      </ul>
+    </section>
+
+    <!-- Technisch -->
+    <section>
+      <h2>Technische Informatie</h2>
+      <table>
+        <tr><th>Onderdeel</th><th>Technologie</th></tr>
+        <tr><td>Hosting</td><td>GitHub Pages (statische website)</td></tr>
+        <tr><td>Database</td><td>Supabase (PostgreSQL met Row Level Security)</td></tr>
+        <tr><td>Authenticatie</td><td>Supabase Auth (e-mail + wachtwoord)</td></tr>
+        <tr><td>Uitnodigingsmails</td><td>Supabase Edge Function + SMTP</td></tr>
+        <tr><td>Agenda-export</td><td>iCal-formaat (.ics)</td></tr>
+        <tr><td>Excel-import</td><td>.xlsx via XLSX bibliotheek</td></tr>
+        <tr><td>Zoekmachines</td><td>Geblokkeerd via robots.txt + noindex</td></tr>
+      </table>
+    </section>
+
+    <!-- Footer -->
+    <div class="footer">
+      <span>Kantine Planner &mdash; v.v. KCVO Vaassen</span>
+      <span>April 2026</span>
+    </div>
+
+  </div>
+</body>
+</html>

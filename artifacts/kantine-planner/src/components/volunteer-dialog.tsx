@@ -109,7 +109,8 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
             if (error) {
               let message = error.message;
               try {
-                const body = await (error as any).context?.json?.();
+                const text = await (error as any).context.text();
+                const body = JSON.parse(text);
                 if (body?.error) message = body.error;
               } catch {}
               toast({ title: "Aangemaakt, maar uitnodiging mislukt", description: message, variant: "destructive" });

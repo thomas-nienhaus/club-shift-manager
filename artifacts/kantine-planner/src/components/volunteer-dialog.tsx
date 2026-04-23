@@ -90,9 +90,28 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
 
     if (editVolunteer) {
       updateVol({ id: editVolunteer.id, data: payload }, {
-        onSuccess: () => {
+        onSuccess: async () => {
           queryClient.invalidateQueries({ queryKey: ['volunteers'] });
-          toast({ title: "Bijgewerkt", description: "Vrijwilliger is opgeslagen." });
+
+          if (email && !editVolunteer.hasPassword) {
+            const { error } = await supabase.functions.invoke('invite-volunteer', {
+              body: { email, volunteerId: editVolunteer.id },
+            });
+            if (error) {
+              let message = error.message;
+              try {
+                const text = await (error as any).context.text();
+                const body = JSON.parse(text);
+                if (body?.error) message = body.error;
+              } catch {}
+              toast({ title: "Opgeslagen, maar uitnodiging mislukt", description: message, variant: "destructive" });
+            } else {
+              toast({ title: "Bijgewerkt", description: `Uitnodiging verstuurd naar ${email}.` });
+            }
+          } else {
+            toast({ title: "Bijgewerkt", description: "Vrijwilliger is opgeslagen." });
+          }
+
           onClose();
         },
         onError: (err: any) => toast({ title: "Fout", description: err.message, variant: "destructive" })
@@ -157,7 +176,11 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
           />
           <div className="flex items-start gap-2 mt-1.5 text-xs text-muted-foreground">
             <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-primary/60" />
-            <span>Vrijwilliger ontvangt automatisch een uitnodigingsmail om een wachtwoord in te stellen.</span>
+            <span>
+              {editVolunteer?.hasPassword
+                ? 'Vrijwilliger heeft al een account. E-mailadres wijzigen stuurt geen nieuwe uitnodiging.'
+                : 'Bij opslaan ontvangt de vrijwilliger automatisch een uitnodigingsmail om een wachtwoord in te stellen.'}
+            </span>
           </div>
         </div>
 

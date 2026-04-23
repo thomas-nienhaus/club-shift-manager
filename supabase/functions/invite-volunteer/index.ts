@@ -46,7 +46,15 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   )
 
-  const { data: invite, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email)
+  const { data: vol } = await supabaseAdmin
+    .from('volunteers')
+    .select('name')
+    .eq('id', volunteerId)
+    .single()
+
+  const { data: invite, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+    data: { name: vol?.name ?? '' },
+  })
   if (inviteError) {
     console.error('inviteUserByEmail failed:', inviteError.message, inviteError)
     return json({ error: inviteError.message }, 400)

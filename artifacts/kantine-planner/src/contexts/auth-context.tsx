@@ -46,9 +46,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         loadCurrentUser(session.user.id, session.user.email!).then(setUser);
+        if (event === 'SIGNED_IN' && sessionStorage.getItem('pending_invite_setup')) {
+          sessionStorage.removeItem('pending_invite_setup');
+          window.location.replace(window.location.origin + window.location.pathname.replace(/\/$/, '') + '/set-password');
+        }
       } else {
         setUser(null);
       }

@@ -31,7 +31,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Mobile Header */}
       <header className="md:hidden flex items-center justify-between p-4 bg-sidebar text-sidebar-foreground no-print sticky top-0 z-30 shadow-md">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded bg-primary flex items-center justify-center font-display font-bold text-lg">K</div>
+          <img src="https://dtohsihpvasoukshnmjl.supabase.co/storage/v1/object/public/public-assets/KCVO.png" alt="KCVO" className="h-8 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
           <span className="font-display font-bold text-xl tracking-tight">Kantine Planner</span>
         </div>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2">
@@ -45,7 +45,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}>
         <div className="p-6 hidden md:flex items-center gap-3 border-b border-white/10">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center font-display font-bold text-2xl shadow-lg shadow-primary/20">K</div>
+          <img src="https://dtohsihpvasoukshnmjl.supabase.co/storage/v1/object/public/public-assets/KCVO.png" alt="KCVO" className="h-10 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
           <span className="font-display font-bold text-2xl tracking-tight">Kantine Planner</span>
         </div>
 

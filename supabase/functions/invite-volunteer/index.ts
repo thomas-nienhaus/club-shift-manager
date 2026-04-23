@@ -48,14 +48,29 @@ Deno.serve(async (req) => {
 
   const { data: vol } = await supabaseAdmin
     .from('volunteers')
-    .select('name')
+    .select('name, auth_id')
     .eq('id', volunteerId)
     .single()
+
+  if (vol?.auth_id) {
+    return json({ error: 'Deze vrijwilliger heeft al een account.' }, 400)
+  }
 
   const { data: invite, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
     data: { name: vol?.name ?? '' },
   })
+
   if (inviteError) {
+    // If the email already exists in Auth, link the existing user instead
+    const lowerMsg = inviteError.message.toLowerCase()
+    if (lowerMsg.includes('already') || lowerMsg.includes('registered') || lowerMsg.includes('exists')) {
+      const { data: usersData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
+      const existing = usersData?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase())
+      if (existing) {
+        await supabaseAdmin.from('volunteers').update({ auth_id: existing.id }).eq('id', volunteerId)
+        return json({ success: true, linked: true })
+      }
+    }
     console.error('inviteUserByEmail failed:', inviteError.message, inviteError)
     return json({ error: inviteError.message }, 400)
   }

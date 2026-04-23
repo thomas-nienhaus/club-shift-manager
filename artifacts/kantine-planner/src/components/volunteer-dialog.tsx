@@ -221,29 +221,47 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
         </div>
 
         <div>
-          <label
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 cursor-pointer transition-all ${
-              isAdmin
-                ? 'border-primary bg-primary/10'
-                : 'border-border bg-white hover:border-primary/30'
-            }`}
-          >
-            <input
-              type="checkbox"
-              checked={isAdmin}
-              onChange={e => setIsAdmin(e.target.checked)}
-              className="w-4 h-4 accent-primary"
-            />
-            <ShieldAlert className={`w-4 h-4 shrink-0 ${isAdmin ? 'text-primary' : 'text-muted-foreground'}`} />
-            <div>
-              <div className={`font-bold text-sm ${isAdmin ? 'text-primary' : 'text-foreground'}`}>
-                Beheerdersrechten
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Kan diensten en vrijwilligers beheren
-              </div>
-            </div>
-          </label>
+          {(() => {
+            const adminDisabled = editVolunteer ? !editVolunteer.hasPassword : !email;
+            return (
+              <>
+                <label
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${
+                    adminDisabled
+                      ? 'border-border bg-muted opacity-50 cursor-not-allowed'
+                      : isAdmin
+                        ? 'border-primary bg-primary/10 cursor-pointer'
+                        : 'border-border bg-white hover:border-primary/30 cursor-pointer'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isAdmin}
+                    disabled={adminDisabled}
+                    onChange={e => setIsAdmin(e.target.checked)}
+                    className="w-4 h-4 accent-primary"
+                  />
+                  <ShieldAlert className={`w-4 h-4 shrink-0 ${isAdmin && !adminDisabled ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <div>
+                    <div className={`font-bold text-sm ${isAdmin && !adminDisabled ? 'text-primary' : 'text-foreground'}`}>
+                      Beheerdersrechten
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Kan diensten en vrijwilligers beheren
+                    </div>
+                  </div>
+                </label>
+                {adminDisabled && (
+                  <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5 shrink-0" />
+                    {editVolunteer
+                      ? 'Stuur eerst een uitnodiging zodat de vrijwilliger een account heeft.'
+                      : 'Vul een e-mailadres in om beheerdersrechten toe te kunnen kennen.'}
+                  </p>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         <div>

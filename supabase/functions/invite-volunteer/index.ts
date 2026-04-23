@@ -47,7 +47,10 @@ Deno.serve(async (req) => {
   )
 
   const { data: invite, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email)
-  if (inviteError) return json({ error: inviteError.message }, 400)
+  if (inviteError) {
+    console.error('inviteUserByEmail failed:', inviteError.message, inviteError)
+    return json({ error: inviteError.message }, 400)
+  }
 
   const { error: updateError } = await supabaseAdmin
     .from('volunteers')

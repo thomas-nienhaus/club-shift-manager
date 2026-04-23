@@ -107,7 +107,13 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
               body: { email, volunteerId: vol.id },
             });
             if (error) {
-              toast({ title: "Aangemaakt, maar uitnodiging mislukt", description: error.message, variant: "destructive" });
+              let message = error.message;
+              try {
+                const text = await (error as any).context.text();
+                const body = JSON.parse(text);
+                if (body?.error) message = body.error;
+              } catch {}
+              toast({ title: "Aangemaakt, maar uitnodiging mislukt", description: message, variant: "destructive" });
             } else {
               toast({ title: "Aangemaakt", description: `Uitnodiging verstuurd naar ${email}.` });
             }

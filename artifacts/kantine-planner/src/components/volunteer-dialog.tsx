@@ -8,7 +8,7 @@ import {
 import type { Volunteer } from '@/lib/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Info, ShieldAlert } from 'lucide-react';
+import { Users, Info, ShieldAlert, Send, CheckCircle2, CircleDashed } from 'lucide-react';
 import { useSlots } from '@/hooks/use-slots';
 import { supabase } from '@/lib/supabase';
 
@@ -27,6 +27,7 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
   const [isAdmin, setIsAdmin] = useState(false);
   const [availability, setAvailability] = useState<string[]>([]);
   const [groupMemberIds, setGroupMemberIds] = useState<number[]>([]);
+  const [isInviting, setIsInviting] = useState(false);
 
   const { slots: allSlots } = useSlots();
 
@@ -74,6 +75,27 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
       }
       return [...prev, id];
     });
+  };
+
+  const handleInvite = async () => {
+    if (!editVolunteer || !email) return;
+    setIsInviting(true);
+    const { error } = await supabase.functions.invoke('invite-volunteer', {
+      body: { email, volunteerId: editVolunteer.id },
+    });
+    setIsInviting(false);
+    if (error) {
+      let message = error.message;
+      try {
+        const text = await (error as any).context.text();
+        const body = JSON.parse(text);
+        if (body?.error) message = body.error;
+      } catch {}
+      toast({ title: "Uitnodiging mislukt", description: message, variant: "destructive" });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['volunteers'] });
+      toast({ title: "Uitnodiging verstuurd", description: `E-mail verstuurd naar ${email}.` });
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -128,7 +150,7 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
     }
   };
 
-  const isPending = isCreating || isUpdating;
+  const isPending = isCreating || isUpdating || isInviting;
   const spotsLeft = MAX_GROUP_SIZE - 1 - groupMemberIds.length;
 
   return (
@@ -147,7 +169,20 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
         </div>
 
         <div>
-          <label className="label-text">E-mailadres (optioneel)</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="label-text mb-0">E-mailadres (optioneel)</label>
+            {editVolunteer && (
+              editVolunteer.hasPassword ? (
+                <span className="flex items-center gap-1 text-xs font-semibold text-accent bg-accent/10 px-2 py-0.5 rounded-full">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Account actief
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                  <CircleDashed className="w-3.5 h-3.5" /> Geen account
+                </span>
+              )
+            )}
+          </div>
           <input
             type="email"
             value={email}
@@ -155,10 +190,23 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
             className="input-field"
             placeholder="jan@voorbeeld.nl"
           />
-          <div className="flex items-start gap-2 mt-1.5 text-xs text-muted-foreground">
-            <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-primary/60" />
-            <span>Vrijwilliger ontvangt automatisch een uitnodigingsmail om een wachtwoord in te stellen.</span>
-          </div>
+          {editVolunteer && !editVolunteer.hasPassword && email && (
+            <button
+              type="button"
+              onClick={handleInvite}
+              disabled={isInviting || isPending}
+              className="mt-2 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border-2 border-primary/30 text-primary hover:bg-primary/5 hover:border-primary transition-all disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <Send className="w-3.5 h-3.5" />
+              {isInviting ? 'Bezig...' : 'Uitnodiging versturen'}
+            </button>
+          )}
+          {!editVolunteer && (
+            <div className="flex items-start gap-2 mt-1.5 text-xs text-muted-foreground">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-primary/60" />
+              <span>Bij aanmaken wordt automatisch een uitnodigingsmail verstuurd als er een e-mailadres is ingevuld.</span>
+            </div>
+          )}
         </div>
 
         <div>

@@ -46,11 +46,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         "fixed md:sticky top-0 left-0 h-screen w-72 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 z-40 no-print shadow-2xl md:shadow-none",
         isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}>
-        <div className="p-6 hidden md:flex items-center gap-3 border-b border-white/10">
-          <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
-            <img src="https://dtohsihpvasoukshnmjl.supabase.co/storage/v1/object/public/public-assets/KCVO.png" alt="KCVO" className="w-9 h-9 object-contain" />
-          </div>
-          <span className="font-display font-bold text-2xl tracking-tight">Kantine Planner</span>
+        <div className="p-6 hidden md:flex flex-col items-center gap-2 border-b border-white/10">
+          <img src="https://dtohsihpvasoukshnmjl.supabase.co/storage/v1/object/public/public-assets/KCVO.png" alt="KCVO" className="h-20 w-auto object-contain" />
+          <span className="font-display font-bold text-lg tracking-tight">Kantine Planner</span>
         </div>
 
         <div className="p-6 flex flex-col gap-1 border-b border-white/10 bg-black/20 overflow-hidden">

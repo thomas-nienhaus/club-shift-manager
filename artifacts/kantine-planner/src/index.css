@@ -35,39 +35,37 @@
 }
 
 :root {
-  /* Clean, slightly warm off-white background */
-  --background: 120 10% 98%;
-  --foreground: 150 40% 10%;
-  
+  --background: 0 0% 98%;
+  --foreground: 0 0% 10%;
+
   --card: 0 0% 100%;
-  --card-foreground: 150 40% 10%;
-  
-  /* Vibrant Grass Green - core sporty brand color */
-  --primary: 142 71% 40%;
+  --card-foreground: 0 0% 10%;
+
+  /* KCVO zwart als primaire kleur */
+  --primary: 0 0% 12%;
   --primary-foreground: 0 0% 100%;
-  
-  /* Dark Forest Green for solid elements */
-  --secondary: 150 90% 12%;
+
+  --secondary: 0 0% 20%;
   --secondary-foreground: 0 0% 100%;
-  
-  --muted: 150 15% 94%;
-  --muted-foreground: 150 10% 40%;
-  
-  /* Energetic Orange for open spots / attention */
+
+  --muted: 0 0% 94%;
+  --muted-foreground: 0 0% 42%;
+
+  /* Oranje als accentkleur voor aandachtspunten */
   --accent: 32 95% 55%;
   --accent-foreground: 0 0% 100%;
-  
+
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  
-  --border: 150 15% 88%;
-  --input: 150 15% 88%;
-  --ring: 142 71% 40%;
-  
-  /* Deep dark green for sidebar */
-  --sidebar: 150 90% 12%;
+
+  --border: 0 0% 88%;
+  --input: 0 0% 88%;
+  --ring: 0 0% 12%;
+
+  /* Zwarte sidebar passend bij KCVO */
+  --sidebar: 0 0% 8%;
   --sidebar-foreground: 0 0% 100%;
-  --sidebar-accent: 142 71% 40%;
+  --sidebar-accent: 0 0% 22%;
 }
 
 @layer base {
@@ -92,7 +90,7 @@
     @apply block text-sm font-bold text-foreground mb-2;
   }
   .btn-primary {
-    @apply px-6 py-3 rounded-xl font-bold bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none;
+    @apply px-6 py-3 rounded-xl font-bold bg-primary text-primary-foreground shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none;
   }
   .btn-secondary {
     @apply px-6 py-3 rounded-xl font-bold bg-white border-2 border-border text-foreground hover:border-primary hover:bg-primary/5 active:bg-primary/10 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none;

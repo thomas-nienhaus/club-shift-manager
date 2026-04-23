@@ -55,8 +55,12 @@ export default function Login() {
 
       <div className="relative z-10 w-full max-w-md px-4">
         <div className="glass-panel rounded-3xl p-8 sm:p-10 text-center">
-          <div className="w-20 h-20 mx-auto bg-primary rounded-2xl flex items-center justify-center shadow-xl shadow-primary/30 mb-8 -mt-16 transform -rotate-3">
-            <span className="font-display font-extrabold text-5xl text-white">K</span>
+          <div className="w-24 h-24 mx-auto bg-white rounded-2xl flex items-center justify-center shadow-xl mb-6 -mt-14 overflow-hidden">
+            <img
+              src="https://dtohsihpvasoukshnmjl.supabase.co/storage/v1/object/public/public-assets/KCVO.png"
+              alt="KCVO"
+              className="w-20 h-20 object-contain"
+            />
           </div>
 
           {!showForgot ? (
@@ -122,7 +126,7 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="w-full py-4 rounded-xl font-bold text-lg bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-1 transition-all duration-200 mt-4 disabled:opacity-50 disabled:pointer-events-none"
+                  className="w-full py-4 rounded-xl font-bold text-lg bg-sidebar text-white shadow-lg shadow-black/30 hover:shadow-xl hover:shadow-black/40 hover:-translate-y-1 transition-all duration-200 mt-4 disabled:opacity-50 disabled:pointer-events-none"
                 >
                   {isPending ? 'Inloggen...' : 'Inloggen'}
                 </button>

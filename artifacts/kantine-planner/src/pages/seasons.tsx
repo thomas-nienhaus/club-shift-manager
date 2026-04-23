@@ -1,15 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { AuthGuard } from '@/contexts/auth-context';
-import { 
-  useListSeasons, 
-  useCreateSeason, 
-  useDeleteSeason, 
-  useImportSeasonSchedule,
-  type Season 
-} from '@workspace/api-client-react';
+import { useListSeasons, useCreateSeason, useDeleteSeason } from '@/hooks/use-seasons';
+import type { Season } from '@/lib/types';
 import { Plus, Trash2, Calendar as CalendarIcon, Upload, Download, FileSpreadsheet, Eye, Wand2, Info } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { format, parseISO } from 'date-fns';
 import { nl } from 'date-fns/locale';
@@ -18,16 +14,18 @@ import { Link } from 'wouter';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useSlots } from '@/hooks/use-slots';
+import { generateSeasonShifts } from '@/utils/season-generator';
+import { importSeasonSchedule } from '@/utils/season-importer';
 
 export default function Seasons() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
+
   const { data: seasons, isLoading } = useListSeasons();
   const { mutate: deleteSeason, isPending: isDeleting } = useDeleteSeason();
-  
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  
+
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importSeason, setImportSeason] = useState<Season | null>(null);
 
@@ -35,8 +33,8 @@ export default function Seasons() {
     if (window.confirm(`Weet je zeker dat je seizoen "${season.name}" wilt verwijderen? Dit verwijdert ook alle gekoppelde diensten.`)) {
       deleteSeason({ id: season.id }, {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['/api/seasons'] });
-          queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+          queryClient.invalidateQueries({ queryKey: ['seasons'] });
+          queryClient.invalidateQueries({ queryKey: ['shifts'] });
           toast({ title: "Verwijderd", description: "Seizoen is succesvol verwijderd." });
         },
         onError: () => {
@@ -60,12 +58,12 @@ export default function Seasons() {
       { Datum: '13-09-2025', Dagdeel: '', '1e Elftal Thuis': '' },
       { Datum: '14-09-2025', Dagdeel: '', '1e Elftal Thuis': '' },
     ];
-    
+
     const ws = XLSX.utils.json_to_sheet(data);
     ws['!cols'] = [{ wch: 14 }, { wch: 18 }, { wch: 18 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Rooster");
-    
+
     XLSX.writeFile(wb, "rooster_template.xlsx");
   };
 
@@ -77,7 +75,7 @@ export default function Seasons() {
             <h1 className="text-4xl font-display font-extrabold mb-2">Seizoenen</h1>
             <p className="text-muted-foreground text-lg">Beheer de seizoenen en importeer roosters.</p>
           </div>
-          
+
           <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary flex items-center gap-2 shrink-0">
             <Plus className="w-5 h-5" /> Nieuw Seizoen
           </button>
@@ -105,27 +103,27 @@ export default function Seasons() {
                     {format(parseISO(season.startDate), 'd MMM yyyy', { locale: nl })} - {format(parseISO(season.endDate), 'd MMM yyyy', { locale: nl })}
                   </div>
                 </div>
-                
+
                 <div className="bg-muted/50 rounded-xl p-3 mb-6 inline-block w-fit">
                   <span className="font-bold text-lg text-foreground">{season.shiftCount}</span>
                   <span className="text-muted-foreground text-sm ml-2">diensten</span>
                 </div>
-                
+
                 <div className="mt-auto space-y-3">
-                  <button 
+                  <button
                     onClick={() => handleOpenImport(season)}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                   >
                     <Upload className="w-4 h-4" /> Rooster Importeren
                   </button>
-                  
+
                   <div className="flex gap-3">
                     <Link href={`/?startDate=${season.startDate}&endDate=${season.endDate}`} className="flex-1">
                       <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold border-2 border-border text-foreground hover:bg-muted transition-colors">
                         <Eye className="w-4 h-4" /> Planning
                       </button>
                     </Link>
-                    <button 
+                    <button
                       onClick={() => handleDelete(season)}
                       disabled={isDeleting}
                       className="px-4 py-2.5 rounded-xl font-bold border-2 border-destructive/20 text-destructive hover:bg-destructive/10 transition-colors"
@@ -140,16 +138,16 @@ export default function Seasons() {
           </div>
         )}
 
-        <CreateSeasonModal 
-          isOpen={isCreateModalOpen} 
-          onClose={() => setIsCreateModalOpen(false)} 
+        <CreateSeasonModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
           onSuccess={(newSeason) => {
             setIsCreateModalOpen(false);
             handleOpenImport(newSeason);
           }}
         />
 
-        <ImportModal 
+        <ImportModal
           isOpen={isImportModalOpen}
           onClose={() => {
             setIsImportModalOpen(false);
@@ -186,18 +184,17 @@ function CreateSeasonModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, on
 
     createSeason({ data: { name, startDate, endDate } }, {
       onSuccess: async (res) => {
-        queryClient.invalidateQueries({ queryKey: ['/api/seasons'] });
+        queryClient.invalidateQueries({ queryKey: ['seasons'] });
 
         if (autoGenerate) {
           setIsGenerating(true);
           try {
-            const r = await fetch(`/api/seasons/${res.id}/generate`, { method: 'POST', credentials: 'include' });
-            const data = await r.json();
+            const data = await generateSeasonShifts(res.id);
             toast({
               title: "Seizoen aangemaakt",
               description: `Seizoen aangemaakt en ${data.shiftsCreated} diensten automatisch gegenereerd.`,
             });
-            queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
+            queryClient.invalidateQueries({ queryKey: ['shifts'] });
           } catch {
             toast({ title: "Seizoen aangemaakt", description: "Seizoen aangemaakt, maar automatisch genereren is mislukt.", variant: "destructive" });
           } finally {
@@ -247,7 +244,6 @@ function CreateSeasonModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, on
             </div>
           </div>
 
-          {/* Auto-generate toggle */}
           <div className={`rounded-xl border-2 p-4 transition-colors ${autoGenerate ? 'border-primary/40 bg-primary/5' : 'border-border bg-muted/20'}`}>
             <label className="flex items-start gap-3 cursor-pointer">
               <input
@@ -294,12 +290,34 @@ function CreateSeasonModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, on
 }
 
 function ImportModal({ isOpen, onClose, season, onDownloadTemplate }: { isOpen: boolean, onClose: () => void, season: Season | null, onDownloadTemplate: () => void }) {
-  const { mutate: importSchedule, isPending } = useImportSeasonSchedule();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const { mutate: doImport, isPending } = useMutation({
+    mutationFn: ({ seasonId, file }: { seasonId: number; file: File }) =>
+      importSeasonSchedule(seasonId, file),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['seasons'] });
+      queryClient.invalidateQueries({ queryKey: ['shifts'] });
+      toast({
+        title: "Import Succesvol",
+        description: `Er zijn ${res.shiftsCreated} diensten aangemaakt voor dit seizoen.`
+      });
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      onClose();
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Import Mislukt",
+        description: err.message || "Er is een fout opgetreden bij het importeren.",
+        variant: "destructive"
+      });
+    }
+  });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -309,33 +327,7 @@ function ImportModal({ isOpen, onClose, season, onDownloadTemplate }: { isOpen: 
 
   const handleImport = () => {
     if (!season || !selectedFile) return;
-
-    importSchedule({ id: season.id, data: { file: selectedFile as any } }, {
-      onSuccess: (res) => {
-        // According to OpenApi the response should have shiftsCreated etc.
-        const responseData = res as any;
-        const count = responseData.shiftsCreated || 0;
-        
-        queryClient.invalidateQueries({ queryKey: ['/api/seasons'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/shifts'] });
-        
-        toast({ 
-          title: "Import Succesvol", 
-          description: `Er zijn ${count} diensten aangemaakt voor dit seizoen.` 
-        });
-        
-        setSelectedFile(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-        onClose();
-      },
-      onError: (err: any) => {
-        toast({ 
-          title: "Import Mislukt", 
-          description: err.message || "Er is een fout opgetreden bij het importeren.", 
-          variant: "destructive" 
-        });
-      }
-    });
+    doImport({ seasonId: season.id, file: selectedFile });
   };
 
   return (
@@ -353,7 +345,7 @@ function ImportModal({ isOpen, onClose, season, onDownloadTemplate }: { isOpen: 
             Importeer een Excel (.xlsx) bestand voor {season?.name}.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-6 pt-4">
           <div className="bg-blue-50 text-blue-900 p-4 rounded-xl text-sm border border-blue-100">
             <h4 className="font-bold mb-2 flex items-center gap-2">
@@ -365,8 +357,8 @@ function ImportModal({ isOpen, onClose, season, onDownloadTemplate }: { isOpen: 
               <li><strong>Dagdeel</strong>: optioneel (Woensdagavond, Donderdagavond, Zaterdagochtend, Zaterdagmiddag, Zondagochtend, Zondagmiddag)</li>
             </ul>
             <p className="text-blue-800/80 text-xs">Als Dagdeel ontbreekt, wordt dit automatisch bepaald op basis van de dag.</p>
-            
-            <button 
+
+            <button
               onClick={onDownloadTemplate}
               className="mt-4 flex items-center gap-2 text-blue-700 hover:text-blue-900 font-bold bg-white px-3 py-1.5 rounded-lg border border-blue-200 hover:border-blue-300 transition-colors"
             >
@@ -376,9 +368,9 @@ function ImportModal({ isOpen, onClose, season, onDownloadTemplate }: { isOpen: 
 
           <div>
             <label className="label-text">Kies .xlsx bestand</label>
-            <input 
-              type="file" 
-              accept=".xlsx, .xls" 
+            <input
+              type="file"
+              accept=".xlsx, .xls"
               onChange={handleFileChange}
               ref={fileInputRef}
               className="block w-full text-sm text-muted-foreground
@@ -394,10 +386,10 @@ function ImportModal({ isOpen, onClose, season, onDownloadTemplate }: { isOpen: 
 
         <DialogFooter className="pt-6">
           <button type="button" onClick={onClose} className="btn-secondary w-full sm:w-auto">Annuleren</button>
-          <button 
-            type="button" 
-            onClick={handleImport} 
-            disabled={!selectedFile || isPending} 
+          <button
+            type="button"
+            onClick={handleImport}
+            disabled={!selectedFile || isPending}
             className="btn-primary w-full sm:w-auto flex items-center justify-center gap-2"
           >
             {isPending ? "Bezig..." : <><Upload className="w-4 h-4" /> Importeren</>}

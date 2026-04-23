@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useEffect } from 'react';
-import { useGetMe, type CurrentUser } from '@workspace/api-client-react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import { useLocation } from 'wouter';
 import { Loader2 } from 'lucide-react';
+import type { CurrentUser } from '@/lib/types';
 
 interface AuthContextType {
   user: CurrentUser | null;
@@ -14,49 +15,74 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { data: user, isLoading, error } = useGetMe({
-    query: {
-      retry: false,
-      refetchOnWindowFocus: false,
-    }
-  });
+async function loadCurrentUser(authId: string, email: string): Promise<CurrentUser> {
+  const { data } = await supabase
+    .from('volunteers')
+    .select('id, name, is_admin')
+    .eq('auth_id', authId)
+    .maybeSingle();
 
-  const value = {
-    user: user || null,
+  return {
+    role: data?.is_admin ? 'admin' : 'volunteer',
+    username: email,
+    volunteerId: data?.id ?? null,
+    volunteerName: data?.name ?? null,
+  };
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<CurrentUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        loadCurrentUser(session.user.id, session.user.email!).then(u => {
+          setUser(u);
+          setIsLoading(false);
+        });
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        loadCurrentUser(session.user.id, session.user.email!).then(setUser);
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const value: AuthContextType = {
+    user,
     isLoading,
     isAdmin: user?.role === 'admin',
-    isAuthenticated: !!user && !error,
+    isAuthenticated: user !== null,
     volunteerId: user?.volunteerId ?? null,
     volunteerName: user?.volunteerName ?? null,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (context === undefined) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 }
 
-export function AuthGuard({ children, requireAdmin = false }: { children: React.ReactNode, requireAdmin?: boolean }) {
+export function AuthGuard({ children, requireAdmin = false }: { children: React.ReactNode; requireAdmin?: boolean }) {
   const { isAuthenticated, isLoading, isAdmin } = useAuth();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
     if (!isLoading) {
-      if (!isAuthenticated) {
-        setLocation('/login');
-      } else if (requireAdmin && !isAdmin) {
-        setLocation('/');
-      }
+      if (!isAuthenticated) setLocation('/login');
+      else if (requireAdmin && !isAdmin) setLocation('/');
     }
   }, [isLoading, isAuthenticated, isAdmin, requireAdmin, setLocation]);
 
@@ -68,9 +94,7 @@ export function AuthGuard({ children, requireAdmin = false }: { children: React.
     );
   }
 
-  if (!isAuthenticated || (requireAdmin && !isAdmin)) {
-    return null; // Will redirect via useEffect
-  }
+  if (!isAuthenticated || (requireAdmin && !isAdmin)) return null;
 
   return <>{children}</>;
 }

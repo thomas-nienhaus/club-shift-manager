@@ -1,29 +1,21 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/contexts/auth-context';
-import { useLogout } from '@workspace/api-client-react';
+import { supabase } from '@/lib/supabase';
 import { CalendarDays, Users, LogOut, Menu, X, ShieldAlert, Calendar, Clock, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const [location, setLocation] = useLocation();
+  const [location] = useLocation();
   const { user, isAdmin, volunteerId } = useAuth();
-  const { mutate: logout } = useLogout();
   const queryClient = useQueryClient();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout(undefined, {
-      onSuccess: () => {
-        queryClient.clear();
-        window.location.href = `${import.meta.env.BASE_URL}login`;
-      },
-      onError: () => {
-        queryClient.clear();
-        window.location.href = `${import.meta.env.BASE_URL}login`;
-      },
-    });
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    queryClient.clear();
+    window.location.href = `${import.meta.env.BASE_URL}login`;
   };
 
   const navItems = [
@@ -53,9 +45,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}>
         <div className="p-6 hidden md:flex items-center gap-3 border-b border-white/10">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center font-display font-bold text-2xl shadow-lg shadow-primary/20">
-            K
-          </div>
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center font-display font-bold text-2xl shadow-lg shadow-primary/20">K</div>
           <span className="font-display font-bold text-2xl tracking-tight">Kantine Planner</span>
         </div>
 
@@ -63,7 +53,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Ingelogd als</div>
           <div className="flex items-center gap-2 min-w-0">
             <div className="font-bold text-lg truncate min-w-0" title={user?.username}>{user?.username}</div>
-            {isAdmin && <ShieldAlert className="w-4 h-4 text-primary shrink-0" title="Administrator" />}
+            {isAdmin && <span title="Administrator"><ShieldAlert className="w-4 h-4 text-primary shrink-0" /></span>}
           </div>
           <div className="text-sm text-sidebar-foreground/70 capitalize">{user?.role}</div>
         </div>
@@ -73,12 +63,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             const isActive = location === item.href;
             return (
               <Link key={item.href} href={item.href}>
-                <div 
+                <div
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={cn(
                     "flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all cursor-pointer",
-                    isActive 
-                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" 
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                       : "text-sidebar-foreground/70 hover:bg-white/10 hover:text-white"
                   )}
                 >
@@ -101,16 +91,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0">
         <div className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
           {children}
         </div>
       </main>
 
-      {/* Mobile Overlay */}
       {isMobileMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 md:hidden no-print"
           onClick={() => setIsMobileMenuOpen(false)}
         />

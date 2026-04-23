@@ -4,12 +4,11 @@ import {
   useCreateVolunteer,
   useUpdateVolunteer,
   useListVolunteers,
-  type Volunteer,
-  type ShiftSlot,
-} from '@workspace/api-client-react';
+} from '@/hooks/use-volunteers';
+import type { Volunteer } from '@/lib/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Eye, EyeOff, Lock, ShieldAlert } from 'lucide-react';
+import { Users, Info, ShieldAlert } from 'lucide-react';
 import { useSlots } from '@/hooks/use-slots';
 
 const MAX_GROUP_SIZE = 5;
@@ -24,10 +23,8 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [availability, setAvailability] = useState<ShiftSlot[]>([]);
+  const [availability, setAvailability] = useState<string[]>([]);
   const [groupMemberIds, setGroupMemberIds] = useState<number[]>([]);
 
   const { slots: allSlots } = useSlots();
@@ -43,8 +40,6 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
 
   useEffect(() => {
     if (isOpen) {
-      setPassword('');
-      setShowPassword(false);
       if (editVolunteer) {
         setName(editVolunteer.name);
         setEmail(editVolunteer.email || '');
@@ -63,9 +58,9 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
     }
   }, [editVolunteer, isOpen]);
 
-  const toggleSlot = (slot: ShiftSlot) => {
+  const toggleSlot = (slotKey: string) => {
     setAvailability(prev =>
-      prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot]
+      prev.includes(slotKey) ? prev.filter(s => s !== slotKey) : [...prev, slotKey]
     );
   };
 
@@ -88,10 +83,6 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
       email: email || null,
       phone: phone || null,
       isAdmin,
-      ...(editVolunteer
-        ? (password ? { password } : {})
-        : { password: password || null }
-      ),
       availability,
       groupMemberIds,
     };
@@ -99,7 +90,7 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
     if (editVolunteer) {
       updateVol({ id: editVolunteer.id, data: payload }, {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['/api/volunteers'] });
+          queryClient.invalidateQueries({ queryKey: ['volunteers'] });
           toast({ title: "Bijgewerkt", description: "Vrijwilliger is opgeslagen." });
           onClose();
         },
@@ -108,7 +99,7 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
     } else {
       createVol({ data: payload }, {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['/api/volunteers'] });
+          queryClient.invalidateQueries({ queryKey: ['volunteers'] });
           toast({ title: "Aangemaakt", description: "Nieuwe vrijwilliger is toegevoegd." });
           onClose();
         },
@@ -144,37 +135,10 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
             className="input-field"
             placeholder="jan@voorbeeld.nl"
           />
-          <p className="text-xs text-muted-foreground mt-1">Vrijwilligers kunnen met dit e-mailadres inloggen op de planning.</p>
-        </div>
-
-        <div>
-          <label className="label-text flex items-center gap-1.5">
-            <Lock className="w-3.5 h-3.5" />
-            {editVolunteer
-              ? `Wachtwoord wijzigen${editVolunteer.hasPassword ? ' (momenteel ingesteld)' : ' (nog niet ingesteld)'}`
-              : 'Wachtwoord (optioneel)'}
-          </label>
-          <div className="relative">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="input-field pr-12"
-              placeholder={editVolunteer ? 'Laat leeg om ongewijzigd te laten' : 'Voer een wachtwoord in'}
-              autoComplete="new-password"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(v => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              tabIndex={-1}
-            >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
+          <div className="flex items-start gap-2 mt-1.5 text-xs text-muted-foreground">
+            <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-primary/60" />
+            <span>Vrijwilliger kan zelf inloggen via dit e-mailadres. Uitnodigen gaat via het Supabase dashboard.</span>
           </div>
-          {editVolunteer && password && (
-            <p className="text-xs text-primary mt-1 font-medium">Het wachtwoord wordt bijgewerkt bij opslaan.</p>
-          )}
         </div>
 
         <div>

@@ -1,39 +1,36 @@
 import React, { useState } from 'react';
-import { useLogin } from '@workspace/api-client-react';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/auth-context';
 import { useLocation } from 'wouter';
 import { Mail, Eye, EyeOff, Lock } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isPending, setIsPending] = useState(false);
 
-  const { mutate: login, isPending } = useLogin();
   const [, setLocation] = useLocation();
   const { isAuthenticated } = useAuth();
-  const queryClient = useQueryClient();
 
   React.useEffect(() => {
     if (isAuthenticated) setLocation('/');
   }, [isAuthenticated, setLocation]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    login({ data: { email: email.trim(), ...(password ? { password } : {}) } }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
-        setLocation('/');
-      },
-      onError: (err: any) => {
-        const msg = err?.response?.data?.error ?? err?.message ?? 'Er is een fout opgetreden.';
-        setError(msg);
-      }
-    });
+    setIsPending(true);
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (authError) throw authError;
+      setLocation('/');
+    } catch (err: any) {
+      setError(err.message ?? 'Er is een fout opgetreden.');
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return (
@@ -77,13 +74,12 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-sidebar mb-2">
-                Wachtwoord <span className="text-sidebar/40 font-normal text-xs">(indien ingesteld)</span>
-              </label>
+              <label className="block text-sm font-bold text-sidebar mb-2">Wachtwoord</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-sidebar/40 w-5 h-5" />
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  required
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   className="w-full pl-11 pr-12 py-3 bg-white/50 border-2 border-sidebar/10 rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all text-sidebar font-semibold"
@@ -105,7 +101,7 @@ export default function Login() {
               disabled={isPending}
               className="w-full py-4 rounded-xl font-bold text-lg bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-1 transition-all duration-200 mt-4 disabled:opacity-50 disabled:pointer-events-none"
             >
-              {isPending ? "Inloggen..." : "Inloggen"}
+              {isPending ? 'Inloggen...' : 'Inloggen'}
             </button>
           </form>
         </div>

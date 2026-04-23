@@ -54,10 +54,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="p-6 flex flex-col gap-1 border-b border-white/10 bg-black/20 overflow-hidden">
           <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Ingelogd als</div>
           <div className="flex items-center gap-2 min-w-0">
-            <div className="font-bold text-lg truncate min-w-0" title={user?.username}>{user?.username}</div>
+            <div className="font-bold text-lg truncate min-w-0">{user?.volunteerName ?? user?.username}</div>
             {isAdmin && <span title="Administrator"><ShieldAlert className="w-4 h-4 text-primary shrink-0" /></span>}
           </div>
-          <div className="text-sm text-sidebar-foreground/70 capitalize">{user?.role}</div>
+          <div className="text-xs text-sidebar-foreground/50 truncate" title={user?.username}>{user?.username}</div>
         </div>
 
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">

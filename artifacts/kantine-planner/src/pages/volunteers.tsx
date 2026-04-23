@@ -3,7 +3,7 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { AuthGuard } from '@/contexts/auth-context';
 import { useListVolunteers, useDeleteVolunteer } from '@/hooks/use-volunteers';
 import type { Volunteer } from '@/lib/types';
-import { Plus, Trash2, Edit2, Search, Mail, Phone, Users, AlertCircle, CalendarDays, Lock, ShieldAlert, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle } from 'lucide-react';
+import { Plus, Trash2, Edit2, Search, Mail, Phone, Users, AlertCircle, CalendarDays, Lock, ShieldAlert, Upload, Download, FileSpreadsheet, CheckCircle2, XCircle, Send } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { VolunteerDialog } from '@/components/volunteer-dialog';
@@ -12,12 +12,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import * as XLSX from 'xlsx';
 import { generateIcal, downloadIcal } from '@/utils/ical';
 import { importVolunteersFromExcel } from '@/utils/volunteer-importer';
+import { supabase } from '@/lib/supabase';
 
 export default function Volunteers() {
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editVol, setEditVol] = useState<Volunteer | null>(null);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [invitingId, setInvitingId] = useState<number | null>(null);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -49,6 +51,27 @@ export default function Volunteers() {
           toast({ title: "Verwijderd", description: "Vrijwilliger is verwijderd uit het systeem." });
         }
       });
+    }
+  };
+
+  const handleInvite = async (vol: Volunteer) => {
+    if (!vol.email) return;
+    setInvitingId(vol.id);
+    const { error } = await supabase.functions.invoke('invite-volunteer', {
+      body: { email: vol.email, volunteerId: vol.id },
+    });
+    setInvitingId(null);
+    if (error) {
+      let message = error.message;
+      try {
+        const text = await (error as any).context.text();
+        const body = JSON.parse(text);
+        if (body?.error) message = body.error;
+      } catch {}
+      toast({ title: 'Uitnodiging mislukt', description: message, variant: 'destructive' });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['volunteers'] });
+      toast({ title: 'Uitnodiging verstuurd', description: `${vol.name} ontvangt een mail om een wachtwoord in te stellen.` });
     }
   };
 
@@ -180,6 +203,16 @@ export default function Volunteers() {
                           >
                             <CalendarDays className="w-5 h-5" />
                           </button>
+                          {vol.email && !vol.hasPassword && (
+                            <button
+                              onClick={() => handleInvite(vol)}
+                              disabled={invitingId === vol.id}
+                              title={`Uitnodiging sturen naar ${vol.name}`}
+                              className="inline-flex p-2 rounded-lg text-muted-foreground hover:bg-blue-50 hover:text-blue-600 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 disabled:opacity-50"
+                            >
+                              <Send className="w-5 h-5" />
+                            </button>
+                          )}
                           <button
                             onClick={() => handleEdit(vol)}
                             className="p-2 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
@@ -226,6 +259,16 @@ export default function Volunteers() {
                         >
                           <CalendarDays className="w-4 h-4" />
                         </button>
+                        {vol.email && !vol.hasPassword && (
+                          <button
+                            onClick={() => handleInvite(vol)}
+                            disabled={invitingId === vol.id}
+                            title={`Uitnodiging sturen naar ${vol.name}`}
+                            className="p-2 rounded-lg text-muted-foreground hover:bg-blue-50 hover:text-blue-600 transition-colors disabled:opacity-50"
+                          >
+                            <Send className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
                           onClick={() => handleEdit(vol)}
                           className="p-2 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"

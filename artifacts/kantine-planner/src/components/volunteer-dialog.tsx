@@ -10,6 +10,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { Users, Info, ShieldAlert } from 'lucide-react';
 import { useSlots } from '@/hooks/use-slots';
+import { supabase } from '@/lib/supabase';
 
 const MAX_GROUP_SIZE = 5;
 
@@ -98,9 +99,22 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
       });
     } else {
       createVol({ data: payload }, {
-        onSuccess: () => {
+        onSuccess: async (vol) => {
           queryClient.invalidateQueries({ queryKey: ['volunteers'] });
-          toast({ title: "Aangemaakt", description: "Nieuwe vrijwilliger is toegevoegd." });
+
+          if (email) {
+            const { error } = await supabase.functions.invoke('invite-volunteer', {
+              body: { email, volunteerId: vol.id },
+            });
+            if (error) {
+              toast({ title: "Aangemaakt, maar uitnodiging mislukt", description: error.message, variant: "destructive" });
+            } else {
+              toast({ title: "Aangemaakt", description: `Uitnodiging verstuurd naar ${email}.` });
+            }
+          } else {
+            toast({ title: "Aangemaakt", description: "Nieuwe vrijwilliger is toegevoegd." });
+          }
+
           onClose();
         },
         onError: (err: any) => toast({ title: "Fout", description: err.message, variant: "destructive" })
@@ -137,7 +151,7 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
           />
           <div className="flex items-start gap-2 mt-1.5 text-xs text-muted-foreground">
             <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-primary/60" />
-            <span>Vrijwilliger kan zelf inloggen via dit e-mailadres. Uitnodigen gaat via het Supabase dashboard.</span>
+            <span>Vrijwilliger ontvangt automatisch een uitnodigingsmail om een wachtwoord in te stellen.</span>
           </div>
         </div>
 

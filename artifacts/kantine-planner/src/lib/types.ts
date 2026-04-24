@@ -61,6 +61,7 @@ export type Season = {
   name: string;
   startDate: string;
   endDate: string;
+  isPublished: boolean;
   createdAt: string;
   shiftCount: number;
 };

@@ -2,14 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { AuthGuard, useAuth } from '@/contexts/auth-context';
 import { useListShifts } from '@/hooks/use-shifts';
-import { useListSeasons } from '@/hooks/use-seasons';
 import { useListVolunteers } from '@/hooks/use-volunteers';
 import type { ShiftWithAssignments } from '@/lib/types';
 import { format, addWeeks, subWeeks, startOfWeek, endOfWeek, parseISO } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import {
-  ChevronLeft, ChevronRight, Plus, Printer, Calendar as CalendarIcon,
-  List as ListIcon, Shuffle, X, AlertCircle, Settings2, User, Download, ArrowLeftRight,
+  ChevronLeft, ChevronRight, Printer, Calendar as CalendarIcon,
+  List as ListIcon, X, AlertCircle, Settings2, User, Download, ArrowLeftRight,
 } from 'lucide-react';
 import { ShiftCard } from '@/components/shift/shift-card';
 import { ShiftFormModal } from '@/components/shift/shift-form-modal';
@@ -20,9 +19,8 @@ import type { ShiftOffer } from '@/lib/types';
 import { SLOT_ORDER } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { useSlots } from '@/hooks/use-slots';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { runAutoSchedule } from '@/utils/auto-schedule';
 import { generateIcal, downloadIcal } from '@/utils/ical';
 
 type FilterMode = 'week' | 'all';
@@ -31,81 +29,6 @@ interface PrintFilters {
   slotFilter: string[];
   volunteerId: number | null;
   volunteerName: string | null;
-}
-
-// ─── Auto Schedule Modal ──────────────────────────────────────────────────────
-function AutoScheduleModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const [selectedSeasonId, setSelectedSeasonId] = useState<number | null>(null);
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const { data: seasons } = useListSeasons();
-
-  const { mutate: doAutoSchedule, isPending } = useMutation({
-    mutationFn: ({ seasonId }: { seasonId: number | null }) =>
-      runAutoSchedule(seasonId ?? undefined),
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['shifts'] });
-      toast({ title: 'Automatisch ingedeeld', description: result.message });
-      onClose();
-    },
-    onError: () => {
-      toast({ title: 'Fout', description: 'Er is iets misgegaan bij het automatisch indelen.', variant: 'destructive' });
-    },
-  });
-
-  const handleSubmit = () => {
-    doAutoSchedule({ seasonId: selectedSeasonId });
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-primary/10"><Shuffle className="w-5 h-5 text-primary" /></div>
-            <h2 className="text-xl font-display font-bold">Automatisch Indelen</h2>
-          </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
-        </div>
-        <div className="p-6 space-y-5">
-          <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
-            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-amber-800">
-              <p className="font-bold mb-1">Hoe werkt het?</p>
-              <ul className="space-y-1 text-amber-700">
-                <li>• Alleen lege diensten (zonder vrijwilligers) worden gevuld</li>
-                <li>• Vrijwilligers worden ingedeeld op hun beschikbare dagdelen</li>
-                <li>• Groepen worden samen ingedeeld</li>
-                <li>• Elke vrijwilliger krijgt ongeveer evenveel diensten</li>
-              </ul>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-bold mb-2">Seizoen (optioneel)</label>
-            <select
-              value={selectedSeasonId ?? ''}
-              onChange={e => setSelectedSeasonId(e.target.value ? Number(e.target.value) : null)}
-              className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30"
-            >
-              <option value="">Alle diensten</option>
-              {seasons?.map(season => (
-                <option key={season.id} value={season.id}>{season.name}</option>
-              ))}
-            </select>
-            <p className="text-xs text-muted-foreground mt-1.5">Laat leeg om alle diensten in het systeem te verwerken.</p>
-          </div>
-        </div>
-        <div className="flex gap-3 p-6 pt-0">
-          <button onClick={onClose} disabled={isPending} className="flex-1 py-3 rounded-xl border border-border font-bold hover:bg-muted transition-colors">Annuleren</button>
-          <button onClick={handleSubmit} disabled={isPending} className="flex-1 py-3 rounded-xl font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
-            {isPending ? <><Shuffle className="w-4 h-4 animate-spin" />Bezig...</> : <><Shuffle className="w-4 h-4" />Indelen</>}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // ─── Print Options Modal ──────────────────────────────────────────────────────
@@ -414,7 +337,6 @@ export default function Dashboard() {
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [assignShift, setAssignShift] = useState<ShiftWithAssignments | null>(null);
 
-  const [isAutoScheduleOpen, setIsAutoScheduleOpen] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [activePrintFilters, setActivePrintFilters] = useState<PrintFilters | null>(null);
 
@@ -499,7 +421,6 @@ export default function Dashboard() {
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleOpenEdit = (shift: ShiftWithAssignments) => { setEditShift(shift); setIsShiftModalOpen(true); };
-  const handleOpenCreate = () => { setEditShift(null); setIsShiftModalOpen(true); };
   const handleOpenAssign = (shift: ShiftWithAssignments) => { setAssignShift(shift); setIsAssignModalOpen(true); };
 
   const handleOffer = (shift: ShiftWithAssignments) => {
@@ -660,20 +581,6 @@ export default function Dashboard() {
             <button onClick={() => setIsPrintModalOpen(true)} className="btn-secondary flex items-center gap-2">
               <Printer className="w-5 h-5" /> Printen
             </button>
-
-            {isAdmin && (
-              <>
-                <button
-                  onClick={() => setIsAutoScheduleOpen(true)}
-                  className="btn-secondary flex items-center gap-2 border-primary/30 text-primary hover:bg-primary/10"
-                >
-                  <Shuffle className="w-5 h-5" /> Auto Indelen
-                </button>
-                <button onClick={handleOpenCreate} className="btn-primary flex items-center gap-2">
-                  <Plus className="w-5 h-5" /> Nieuwe Dienst
-                </button>
-              </>
-            )}
           </div>
         </div>
 
@@ -707,18 +614,13 @@ export default function Dashboard() {
               <CalendarIcon className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
               <h3 className="text-2xl font-bold text-foreground mb-2">Geen diensten gevonden</h3>
               <p className="text-muted-foreground">Er zijn nog geen kantinediensten ingepland voor deze periode.</p>
-              {isAdmin && (
-                <button onClick={handleOpenCreate} className="mt-6 btn-primary">
-                  Eerste Dienst Aanmaken
-                </button>
-              )}
             </div>
           ) : (
             <ShiftsGrid
               groupedShifts={groupedShifts}
               onEdit={handleOpenEdit}
               onAssign={handleOpenAssign}
-              onOffer={myVolunteerId && !isAdmin ? handleOffer : undefined}
+              onOffer={myVolunteerId ? handleOffer : undefined}
               myVolunteerId={myVolunteerId}
               openOfferShiftIds={myOpenOfferShiftIds}
             />
@@ -753,25 +655,17 @@ export default function Dashboard() {
           />
         )}
 
-        {isAdmin && (
-          <>
-            <ShiftFormModal
-              isOpen={isShiftModalOpen}
-              onClose={() => setIsShiftModalOpen(false)}
-              editShift={editShift}
-              defaultDate={currentDate}
-            />
-            <AssignModal
-              isOpen={isAssignModalOpen}
-              onClose={() => setIsAssignModalOpen(false)}
-              shift={assignShift}
-            />
-            <AutoScheduleModal
-              isOpen={isAutoScheduleOpen}
-              onClose={() => setIsAutoScheduleOpen(false)}
-            />
-          </>
-        )}
+        <ShiftFormModal
+          isOpen={isShiftModalOpen}
+          onClose={() => setIsShiftModalOpen(false)}
+          editShift={editShift}
+          defaultDate={currentDate}
+        />
+        <AssignModal
+          isOpen={isAssignModalOpen}
+          onClose={() => setIsAssignModalOpen(false)}
+          shift={assignShift}
+        />
       </AppLayout>
     </AuthGuard>
   );

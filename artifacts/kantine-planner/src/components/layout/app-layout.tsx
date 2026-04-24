@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/contexts/auth-context';
 import { supabase } from '@/lib/supabase';
-import { CalendarDays, Users, LogOut, Menu, X, ShieldAlert, Calendar, Clock, Settings } from 'lucide-react';
+import { CalendarDays, LogOut, Menu, X, ShieldAlert, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -20,9 +20,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { href: '/', label: 'Planning', icon: CalendarDays, show: true },
-    { href: '/seasons', label: 'Seizoenen', icon: Calendar, show: isAdmin },
-    { href: '/volunteers', label: 'Vrijwilligers', icon: Users, show: isAdmin },
-    { href: '/availability-slots', label: 'Dagdelen', icon: Clock, show: isAdmin },
+    { href: '/beheer', label: 'Beheer', icon: ShieldAlert, show: isAdmin },
     { href: '/settings', label: 'Instellingen', icon: Settings, show: !!volunteerId },
   ];
 

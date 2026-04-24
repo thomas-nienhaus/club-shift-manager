@@ -13,8 +13,20 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Edit2, GripVertical, Check, X } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 
+const DAYS = [
+  { value: 'monday',    label: 'Maandag' },
+  { value: 'tuesday',   label: 'Dinsdag' },
+  { value: 'wednesday', label: 'Woensdag' },
+  { value: 'thursday',  label: 'Donderdag' },
+  { value: 'friday',    label: 'Vrijdag' },
+  { value: 'saturday',  label: 'Zaterdag' },
+  { value: 'sunday',    label: 'Zondag' },
+];
+const DAY_LABELS: Record<string, string> = Object.fromEntries(DAYS.map(d => [d.value, d.label]));
+function getDayFromKey(key: string) { return key.split('_')[0]; }
+
 interface SlotFormState {
-  key: string;
+  day: string;
   label: string;
   isActive: boolean;
   startTime: string;
@@ -35,20 +47,20 @@ function SlotFormModal({
   const { mutate: createSlot, isPending: isCreating } = useCreateAvailabilitySlot();
   const { mutate: updateSlot, isPending: isUpdating } = useUpdateAvailabilitySlot();
 
-  const [form, setForm] = useState<SlotFormState>({ key: '', label: '', isActive: true, startTime: '', endTime: '' });
+  const [form, setForm] = useState<SlotFormState>({ day: 'monday', label: '', isActive: true, startTime: '', endTime: '' });
 
   React.useEffect(() => {
     if (isOpen) {
       if (editSlot) {
         setForm({
-          key: editSlot.key,
+          day: getDayFromKey(editSlot.key),
           label: editSlot.label,
           isActive: editSlot.isActive ?? true,
           startTime: editSlot.startTime ?? '',
           endTime: editSlot.endTime ?? '',
         });
       } else {
-        setForm({ key: '', label: '', isActive: true, startTime: '', endTime: '' });
+        setForm({ day: 'monday', label: '', isActive: true, startTime: '', endTime: '' });
       }
     }
   }, [isOpen, editSlot]);
@@ -68,7 +80,10 @@ function SlotFormModal({
         onError: (e: any) => toast({ title: 'Fout', description: e.message, variant: 'destructive' }),
       });
     } else {
-      createSlot({ data: { key: form.key, label: form.label, isActive: form.isActive, ...times } }, {
+      const labelSlug = form.label.toLowerCase()
+        .replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+      const key = `${form.day}_${labelSlug}`;
+      createSlot({ data: { key, label: form.label, isActive: form.isActive, ...times } }, {
         onSuccess: () => { invalidate(); toast({ title: 'Aangemaakt', description: 'Nieuw dagdeel toegevoegd.' }); onClose(); },
         onError: (e: any) => toast({ title: 'Fout', description: e.message, variant: 'destructive' }),
       });
@@ -80,19 +95,24 @@ function SlotFormModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={editSlot ? 'Dagdeel Bewerken' : 'Nieuw Dagdeel'}>
       <form onSubmit={handleSubmit} className="space-y-5">
-        {!editSlot && (
+        {!editSlot ? (
           <div>
-            <label className="label-text">Sleutel (uniek, niet te wijzigen)</label>
-            <input
-              type="text"
+            <label className="label-text">Dag</label>
+            <select
               required
-              pattern="^[a-z0-9_]+$"
-              value={form.key}
-              onChange={e => setForm(f => ({ ...f, key: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_') }))}
-              className="input-field font-mono"
-              placeholder="bijv. friday_evening"
-            />
-            <p className="text-xs text-muted-foreground mt-1">Alleen kleine letters, cijfers en underscores.</p>
+              value={form.day}
+              onChange={e => setForm(f => ({ ...f, day: e.target.value }))}
+              className="input-field"
+            >
+              {DAYS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+            </select>
+          </div>
+        ) : (
+          <div>
+            <label className="label-text">Dag</label>
+            <p className="input-field text-muted-foreground bg-muted/40 cursor-default">
+              {DAY_LABELS[getDayFromKey(editSlot.key)] ?? getDayFromKey(editSlot.key)}
+            </p>
           </div>
         )}
         <div>
@@ -228,6 +248,7 @@ export default function AvailabilitySlotsPage() {
                     <tr className="bg-muted/50 text-muted-foreground uppercase tracking-wider text-xs font-bold border-b border-border">
                       <th className="p-4 pl-6 w-8"></th>
                       <th className="p-4">Label</th>
+                      <th className="p-4">Dag</th>
                       <th className="p-4">Sleutel</th>
                       <th className="p-4">Tijd</th>
                       <th className="p-4 text-center">Actief</th>
@@ -241,6 +262,7 @@ export default function AvailabilitySlotsPage() {
                           <GripVertical className="w-4 h-4 opacity-40" />
                         </td>
                         <td className="p-4 font-bold text-foreground">{slot.label}</td>
+                        <td className="p-4 text-sm text-muted-foreground">{DAY_LABELS[getDayFromKey(slot.key)] ?? '—'}</td>
                         <td className="p-4 font-mono text-sm text-muted-foreground">{slot.key}</td>
                         <td className="p-4 text-sm text-muted-foreground">
                           {slot.startTime && slot.endTime
@@ -304,6 +326,7 @@ export default function AvailabilitySlotsPage() {
 
                     <div className="flex items-center justify-between gap-2 pl-6">
                       <div className="flex flex-col gap-0.5 min-w-0">
+                        <span className="text-xs text-muted-foreground">{DAY_LABELS[getDayFromKey(slot.key)] ?? '—'}</span>
                         <span className="font-mono text-xs text-muted-foreground">{slot.key}</span>
                         {(slot.startTime || slot.endTime) && (
                           <span className="text-xs font-medium text-foreground">

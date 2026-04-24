@@ -6,16 +6,7 @@ import { format, getDay, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useSlots } from '@/hooks/use-slots';
 import { AlertCircle } from 'lucide-react';
-
-const DAY_PREFIXES: Record<string, number> = {
-  sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
-  thursday: 4, friday: 5, saturday: 6,
-};
-
-function slotDayIndex(slotKey: string): number | undefined {
-  const prefix = slotKey.split('_')[0].toLowerCase();
-  return DAY_PREFIXES[prefix];
-}
+import { slotDayIndex } from '@/utils/slot-utils';
 
 interface ShiftFormModalProps {
   isOpen: boolean;

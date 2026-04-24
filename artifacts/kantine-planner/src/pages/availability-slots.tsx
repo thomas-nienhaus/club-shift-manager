@@ -13,17 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Edit2, GripVertical, Check, X } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 
-const DAYS = [
-  { value: 'monday',    label: 'Maandag' },
-  { value: 'tuesday',   label: 'Dinsdag' },
-  { value: 'wednesday', label: 'Woensdag' },
-  { value: 'thursday',  label: 'Donderdag' },
-  { value: 'friday',    label: 'Vrijdag' },
-  { value: 'saturday',  label: 'Zaterdag' },
-  { value: 'sunday',    label: 'Zondag' },
-];
-const DAY_LABELS: Record<string, string> = Object.fromEntries(DAYS.map(d => [d.value, d.label]));
-function getDayFromKey(key: string) { return key.split('_')[0]; }
+import { DAYS, DAY_LABELS, getDayFromKey, makeLabelSlug } from '@/utils/slot-utils';
 
 interface SlotFormState {
   day: string;
@@ -80,9 +70,7 @@ function SlotFormModal({
         onError: (e: any) => toast({ title: 'Fout', description: e.message, variant: 'destructive' }),
       });
     } else {
-      const labelSlug = form.label.toLowerCase()
-        .replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
-      const key = `${form.day}_${labelSlug}`;
+      const key = `${form.day}_${makeLabelSlug(form.label)}`;
       createSlot({ data: { key, label: form.label, isActive: form.isActive, ...times } }, {
         onSuccess: () => { invalidate(); toast({ title: 'Aangemaakt', description: 'Nieuw dagdeel toegevoegd.' }); onClose(); },
         onError: (e: any) => toast({ title: 'Fout', description: e.message, variant: 'destructive' }),

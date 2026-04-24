@@ -493,7 +493,7 @@ export default function Dashboard() {
             <p className="text-muted-foreground text-lg">Bekijk de volledige kantine planning.</p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-end gap-3">
             {/* ── Filter dropdown ── */}
             <div className="relative" ref={filterDropdownRef}>
               {(() => {
@@ -521,7 +521,7 @@ export default function Dashboard() {
               })()}
 
               {filterOpen && (
-                <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-72 max-w-[calc(100vw-1rem)] bg-white border-2 border-border rounded-2xl shadow-xl z-20 overflow-hidden">
+                <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-1rem)] bg-white border-2 border-border rounded-2xl shadow-xl z-20 overflow-hidden">
                   <div className="p-4 space-y-5">
 
                     {/* Weergave */}
@@ -606,7 +606,7 @@ export default function Dashboard() {
               </button>
 
               {printOpen && (
-                <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-72 max-w-[calc(100vw-1rem)] bg-white border-2 border-border rounded-2xl shadow-xl z-20">
+                <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-1rem)] bg-white border-2 border-border rounded-2xl shadow-xl z-20">
                   <div className="p-4 space-y-4">
 
                     {seasons && seasons.length > 0 && (

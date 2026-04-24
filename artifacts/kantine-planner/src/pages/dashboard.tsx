@@ -665,7 +665,7 @@ export default function Dashboard() {
               })()}
 
               {filterOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-white border-2 border-border rounded-2xl shadow-xl z-20 overflow-hidden">
+                <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-72 max-w-[calc(100vw-1rem)] bg-white border-2 border-border rounded-2xl shadow-xl z-20 overflow-hidden">
                   <div className="p-4 space-y-5">
 
                     {/* Weergave */}

@@ -7,11 +7,11 @@ const KEY = ['seasons'] as const;
 async function fetchSeasons(): Promise<Season[]> {
   const { data, error } = await supabase
     .from('seasons')
-    .select('id, name, start_date, end_date, is_published, created_at')
+    .select('*')
     .order('start_date');
   if (error) throw error;
 
-  const ids = data.map(s => s.id);
+  const ids = data.map((s: any) => s.id);
   if (ids.length === 0) return [];
 
   const { data: counts, error: cErr } = await supabase
@@ -21,14 +21,14 @@ async function fetchSeasons(): Promise<Season[]> {
   if (cErr) throw cErr;
 
   const countMap = new Map<number, number>();
-  counts.forEach(r => countMap.set(r.season_id, (countMap.get(r.season_id) ?? 0) + 1));
+  counts.forEach((r: any) => countMap.set(r.season_id, (countMap.get(r.season_id) ?? 0) + 1));
 
-  return data.map(s => ({
+  return data.map((s: any) => ({
     id: s.id,
     name: s.name,
     startDate: s.start_date,
     endDate: s.end_date,
-    isPublished: s.is_published,
+    isPublished: s.is_published ?? true,
     createdAt: s.created_at,
     shiftCount: countMap.get(s.id) ?? 0,
   }));
@@ -49,7 +49,7 @@ export function useCreateSeason() {
         .select()
         .single();
       if (error) throw error;
-      return { id: data.id, name: data.name, startDate: data.start_date, endDate: data.end_date, isPublished: data.is_published, createdAt: data.created_at, shiftCount: 0 };
+      return { id: data.id, name: data.name, startDate: data.start_date, endDate: data.end_date, isPublished: (data as any).is_published ?? true, createdAt: data.created_at, shiftCount: 0 };
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   });

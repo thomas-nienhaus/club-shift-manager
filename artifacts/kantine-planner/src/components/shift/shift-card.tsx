@@ -4,7 +4,6 @@ import type { ShiftWithAssignments } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useSlots } from '@/hooks/use-slots';
 import { Users, Trash2, Edit2, UserPlus, X, RefreshCw, Clock, ArrowLeftRight } from 'lucide-react';
-import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 
 const PLACEHOLDER_NOTE = 'Om beurten een elftal';
@@ -16,6 +15,7 @@ interface ShiftCardProps {
   onOffer?: (shift: ShiftWithAssignments) => void;
   myVolunteerId?: number | null;
   hasOpenOffer?: boolean;
+  adminMode?: boolean;
 }
 
 function formatTimeRange(startTime?: string | null, endTime?: string | null): string | null {
@@ -25,8 +25,7 @@ function formatTimeRange(startTime?: string | null, endTime?: string | null): st
   return null;
 }
 
-export function ShiftCard({ shift, onEdit, onAssign, onOffer, myVolunteerId, hasOpenOffer }: ShiftCardProps) {
-  const { isAdmin } = useAuth();
+export function ShiftCard({ shift, onEdit, onAssign, onOffer, myVolunteerId, hasOpenOffer, adminMode = false }: ShiftCardProps) {
   const { toast } = useToast();
   const { getLabel } = useSlots();
   const timeRange = formatTimeRange(shift.startTime, shift.endTime);
@@ -67,7 +66,7 @@ export function ShiftCard({ shift, onEdit, onAssign, onOffer, myVolunteerId, has
               <p className="text-sm font-semibold text-muted-foreground/70">Geen vrijwilligers nodig</p>
             </div>
           </div>
-          {isAdmin && (
+          {adminMode && (
             <div className="flex gap-1 no-print">
               <button onClick={() => onEdit(shift)} disabled={isDeleting} className="p-2 rounded-lg text-muted-foreground hover:bg-white/70 hover:text-foreground transition-colors" title="Bewerken"><Edit2 className="w-4 h-4" /></button>
               <button onClick={handleDelete} disabled={isDeleting} className="p-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors" title="Verwijderen"><Trash2 className="w-4 h-4" /></button>
@@ -102,7 +101,7 @@ export function ShiftCard({ shift, onEdit, onAssign, onOffer, myVolunteerId, has
             </p>
           </div>
         </div>
-        {isAdmin && (
+        {adminMode && (
           <div className="flex gap-1 no-print">
             <button onClick={() => onEdit(shift)} disabled={isDeleting} className="p-2 rounded-lg text-muted-foreground hover:bg-white/70 hover:text-foreground transition-colors" title="Bewerken"><Edit2 className="w-4 h-4" /></button>
             <button onClick={handleDelete} disabled={isDeleting} className="p-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors" title="Verwijderen"><Trash2 className="w-4 h-4" /></button>
@@ -123,7 +122,7 @@ export function ShiftCard({ shift, onEdit, onAssign, onOffer, myVolunteerId, has
               {shift.assignments.map((assignment) => (
                 <li key={assignment.id} className="flex items-center justify-between bg-muted/30 border border-border/50 p-2 pl-3 rounded-lg group print-break-inside-avoid">
                   <span className="font-semibold text-sm">{assignment.volunteer.name}</span>
-                  {isAdmin && (
+                  {adminMode && (
                     <button onClick={() => handleUnassign(assignment.volunteerId, assignment.volunteer.name)} disabled={isUnassigning} className="text-muted-foreground hover:text-destructive p-1 opacity-0 group-hover:opacity-100 transition-opacity no-print" title="Verwijder van dienst"><X className="w-4 h-4" /></button>
                   )}
                 </li>
@@ -133,7 +132,7 @@ export function ShiftCard({ shift, onEdit, onAssign, onOffer, myVolunteerId, has
         </div>
       </div>
 
-      {isAdmin && (
+      {adminMode && (
         <div className="p-4 border-t bg-muted/10 rounded-b-xl no-print">
           <button onClick={() => onAssign(shift)} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all border border-primary/20 hover:border-primary shadow-sm">
             <UserPlus className="w-4 h-4" />Vrijwilliger Indelen
@@ -141,7 +140,7 @@ export function ShiftCard({ shift, onEdit, onAssign, onOffer, myVolunteerId, has
         </div>
       )}
 
-      {!isAdmin && onOffer && isMyShift && isFuture && !hasOpenOffer && (
+      {onOffer && isMyShift && isFuture && !hasOpenOffer && (
         <div className="p-4 border-t bg-muted/10 rounded-b-xl no-print">
           <button onClick={() => onOffer(shift)} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all border border-primary/20 hover:border-primary shadow-sm">
             <ArrowLeftRight className="w-4 h-4" />Dienst Aanbieden

@@ -3,6 +3,7 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { AuthGuard, useAuth } from '@/contexts/auth-context';
 import { useListShifts } from '@/hooks/use-shifts';
 import { useListVolunteers } from '@/hooks/use-volunteers';
+import { useListSeasons } from '@/hooks/use-seasons';
 import type { ShiftWithAssignments } from '@/lib/types';
 import { format, addWeeks, subWeeks, startOfWeek, endOfWeek, parseISO } from 'date-fns';
 import { nl } from 'date-fns/locale';
@@ -29,6 +30,8 @@ interface PrintFilters {
   slotFilter: string[];
   volunteerId: number | null;
   volunteerName: string | null;
+  seasonId: number | null;
+  seasonName: string | null;
 }
 
 // ─── Print Options Modal ──────────────────────────────────────────────────────
@@ -41,7 +44,9 @@ interface PrintOptionsModalProps {
 function PrintOptionsModal({ isOpen, onClose, onPrint }: PrintOptionsModalProps) {
   const [slotFilter, setSlotFilter] = useState<string[] | null>(null);
   const [volunteerId, setVolunteerId] = useState<number | null>(null);
+  const [seasonId, setSeasonId] = useState<number | null>(null);
   const { data: volunteers } = useListVolunteers();
+  const { data: seasons } = useListSeasons();
   const { slots } = useSlots();
 
   const allSlotKeys = slots.map(s => s.key);
@@ -59,11 +64,12 @@ function PrintOptionsModal({ isOpen, onClose, onPrint }: PrintOptionsModalProps)
 
   const handlePrint = () => {
     const vol = volunteers?.find(v => v.id === volunteerId);
-    onPrint({ slotFilter: slotFilter ?? [], volunteerId, volunteerName: vol?.name ?? null });
+    const season = seasons?.find(s => s.id === seasonId);
+    onPrint({ slotFilter: slotFilter ?? [], volunteerId, volunteerName: vol?.name ?? null, seasonId, seasonName: season?.name ?? null });
     onClose();
   };
 
-  const reset = () => { setSlotFilter(null); setVolunteerId(null); };
+  const reset = () => { setSlotFilter(null); setVolunteerId(null); setSeasonId(null); };
 
   const noneSelected = slotFilter !== null && slotFilter.length === 0;
 
@@ -125,6 +131,24 @@ function PrintOptionsModal({ isOpen, onClose, onPrint }: PrintOptionsModalProps)
                   {slotFilter!.length} van {allSlotKeys.length} dagdelen geselecteerd.
                 </p>
               )}
+            </div>
+          )}
+
+          {seasons && seasons.length > 0 && (
+            <div>
+              <label className="block text-sm font-bold mb-2 uppercase tracking-wide text-muted-foreground">
+                Seizoen (optioneel)
+              </label>
+              <select
+                value={seasonId ?? ''}
+                onChange={e => setSeasonId(e.target.value ? Number(e.target.value) : null)}
+                className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30"
+              >
+                <option value="">Alle seizoenen</option>
+                {seasons.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
             </div>
           )}
 
@@ -343,6 +367,10 @@ export default function Dashboard() {
 
     let filtered = [...allShifts];
 
+    if (activePrintFilters.seasonId !== null) {
+      filtered = filtered.filter(s => s.seasonId === activePrintFilters.seasonId);
+    }
+
     if (activePrintFilters.slotFilter.length > 0) {
       filtered = filtered.filter(s => activePrintFilters.slotFilter.includes(s.slot));
     }
@@ -399,8 +427,9 @@ export default function Dashboard() {
   const { getLabel: getSlotLabel } = useSlots();
 
   const printTitle = useMemo(() => {
-    if (!activePrintFilters) return 'Voetbalclub Kantine Schema';
-    const parts: string[] = ['Voetbalclub Kantine Schema'];
+    if (!activePrintFilters) return 'Kantine Schema';
+    const base = activePrintFilters.seasonName ?? 'Kantine Schema';
+    const parts: string[] = [base];
     if (activePrintFilters.slotFilter.length > 0) {
       const labels = activePrintFilters.slotFilter.map(k => getSlotLabel(k)).join(', ');
       parts.push(`— ${labels}`);

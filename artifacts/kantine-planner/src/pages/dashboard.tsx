@@ -233,6 +233,12 @@ function PrintWeeklyTable({ shifts }: { shifts: ShiftWithAssignments[] }) {
         <div key={week.weekKey} className="print-week-block">
           <h2 className="print-week-heading">{week.weekLabel}</h2>
           <table className="print-schedule-table">
+            <colgroup>
+              <col style={{ width: '13%' }} />
+              <col style={{ width: '19%' }} />
+              <col style={{ width: '15%' }} />
+              <col style={{ width: '53%' }} />
+            </colgroup>
             <thead>
               <tr>
                 <th>Datum</th>

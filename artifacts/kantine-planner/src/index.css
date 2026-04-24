@@ -168,6 +168,7 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 9.5pt;
+    table-layout: fixed;
   }
   .print-schedule-table th {
     background: #e8e8e8;

@@ -195,8 +195,8 @@ function CreateSeasonModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, on
               description: `Seizoen aangemaakt en ${data.shiftsCreated} diensten automatisch gegenereerd.`,
             });
             queryClient.invalidateQueries({ queryKey: ['shifts'] });
-          } catch {
-            toast({ title: "Seizoen aangemaakt", description: "Seizoen aangemaakt, maar automatisch genereren is mislukt.", variant: "destructive" });
+          } catch (err: any) {
+            toast({ title: "Genereren mislukt", description: err?.message ?? "Seizoen aangemaakt, maar diensten konden niet automatisch worden gegenereerd.", variant: "destructive" });
           } finally {
             setIsGenerating(false);
           }

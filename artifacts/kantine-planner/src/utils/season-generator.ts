@@ -1,14 +1,5 @@
 import { supabase } from '@/lib/supabase';
-
-const DAY_PREFIXES: Record<string, number> = {
-  sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
-  thursday: 4, friday: 5, saturday: 6,
-};
-
-function slotDayIndex(slotKey: string): number | undefined {
-  const prefix = slotKey.split('_')[0].toLowerCase();
-  return DAY_PREFIXES[prefix];
-}
+import { slotDayIndex } from '@/utils/slot-utils';
 
 function addDays(date: Date, n: number): Date {
   const d = new Date(date);
@@ -59,9 +50,10 @@ export async function generateSeasonShifts(seasonId: number): Promise<{ shiftsCr
     return { shiftsCreated: 0, message: 'Geen actieve dagdelen gevonden voor dit seizoen.' };
   }
 
-  const { error } = await supabase
-    .from('shifts')
-    .upsert(shifts, { onConflict: 'season_id,date,slot', ignoreDuplicates: true });
+  // Plain insert — this function is only called for newly created seasons
+  // so there can never be duplicate shifts to conflict with.
+  // (upsert with onConflict doesn't work reliably with partial indexes)
+  const { error } = await supabase.from('shifts').insert(shifts);
   if (error) throw error;
 
   return { shiftsCreated: shifts.length, message: `${shifts.length} diensten aangemaakt.` };

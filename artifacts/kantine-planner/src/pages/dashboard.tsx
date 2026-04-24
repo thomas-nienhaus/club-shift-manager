@@ -9,7 +9,7 @@ import { format, addWeeks, subWeeks, startOfWeek, endOfWeek, parseISO } from 'da
 import { nl } from 'date-fns/locale';
 import {
   ChevronLeft, ChevronRight, ChevronDown, Printer, Calendar as CalendarIcon,
-  List as ListIcon, X, AlertCircle, Settings2, User, Download, ArrowLeftRight,
+  List as ListIcon, X, AlertCircle, Settings2, User, Download, ArrowLeftRight, Rss, Copy, Check,
 } from 'lucide-react';
 import { ShiftsGrid } from '@/components/shift/shifts-grid';
 import { ShiftFormModal } from '@/components/shift/shift-form-modal';
@@ -315,7 +315,7 @@ function PrintWeeklyTable({ shifts }: { shifts: ShiftWithAssignments[] }) {
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 export default function Dashboard() {
-  const { isAdmin, volunteerId: myVolunteerId, volunteerName: myVolunteerName } = useAuth();
+  const { isAdmin, volunteerId: myVolunteerId, volunteerName: myVolunteerName, authId } = useAuth();
   const { toast } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [filterMode, setFilterMode] = useState<FilterMode>('week');
@@ -328,6 +328,9 @@ export default function Dashboard() {
 
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [activePrintFilters, setActivePrintFilters] = useState<PrintFilters | null>(null);
+
+  const [icalStreamOpen, setIcalStreamOpen] = useState(false);
+  const [icalCopied, setIcalCopied] = useState(false);
 
   const [isOfferResponseOpen, setIsOfferResponseOpen] = useState(false);
   const [respondOffer, setRespondOffer] = useState<ShiftOffer | null>(null);
@@ -436,6 +439,19 @@ export default function Dashboard() {
     }
   };
 
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+  const icalStreamHttpUrl = myVolunteerId && authId
+    ? `${supabaseUrl}/functions/v1/ical?volunteerId=${myVolunteerId}&token=${authId}`
+    : null;
+  const icalStreamWebcalUrl = icalStreamHttpUrl?.replace(/^https?:\/\//, 'webcal://') ?? null;
+
+  const handleCopyIcalUrl = async () => {
+    if (!icalStreamHttpUrl) return;
+    await navigator.clipboard.writeText(icalStreamHttpUrl);
+    setIcalCopied(true);
+    setTimeout(() => setIcalCopied(false), 2000);
+  };
+
   const { getLabel: getSlotLabel } = useSlots();
 
   const printTitle = useMemo(() => {
@@ -455,22 +471,65 @@ export default function Dashboard() {
       <AppLayout>
         {/* ── Volunteer welcome banner ── */}
         {myVolunteerId && (
-          <div className="flex items-center gap-4 bg-primary/10 border-2 border-primary/20 rounded-2xl px-5 py-4 mb-6 no-print">
-            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <User className="w-5 h-5 text-primary" />
+          <div className="bg-primary/10 border-2 border-primary/20 rounded-2xl mb-6 no-print overflow-hidden">
+            <div className="flex items-center gap-4 px-5 py-4">
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <User className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-foreground">Welkom, {myVolunteerName}!</p>
+                <p className="text-sm text-muted-foreground">Synchroniseer jouw diensten met je agenda-app.</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {icalStreamWebcalUrl && (
+                  <button
+                    onClick={() => setIcalStreamOpen(o => !o)}
+                    className={cn("flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-colors", icalStreamOpen ? "bg-primary text-primary-foreground" : "bg-primary/20 hover:bg-primary/30 text-primary")}
+                    title="Abonneer op jouw agenda-stream"
+                  >
+                    <Rss className="w-4 h-4" />
+                    <span className="hidden sm:inline">Abonneren</span>
+                  </button>
+                )}
+                <button
+                  onClick={handleIcalDownload}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/20 hover:bg-primary/30 text-primary font-semibold text-sm transition-colors"
+                  title="Download jouw diensten als agenda-bestand"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="hidden sm:inline">Downloaden</span>
+                </button>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-foreground">Welkom, {myVolunteerName}!</p>
-              <p className="text-sm text-muted-foreground">Download jouw persoonlijke diensten als agenda-bestand.</p>
-            </div>
-            <button
-              onClick={handleIcalDownload}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/20 hover:bg-primary/30 text-primary font-semibold text-sm transition-colors shrink-0"
-              title="Download jouw diensten als agenda-bestand"
-            >
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">iCal downloaden</span>
-            </button>
+
+            {icalStreamOpen && icalStreamHttpUrl && icalStreamWebcalUrl && (
+              <div className="border-t-2 border-primary/20 px-5 py-4 bg-white/60">
+                <p className="text-sm font-bold text-foreground mb-1">Agenda-abonnement</p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Voeg de URL hieronder toe in Google Calendar, Apple Agenda of Outlook. Nieuwe diensten verschijnen dan automatisch.
+                </p>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    readOnly
+                    value={icalStreamHttpUrl}
+                    className="flex-1 px-3 py-2 text-xs font-mono bg-white border-2 border-border rounded-xl text-foreground focus:outline-none focus:border-primary"
+                    onFocus={e => e.target.select()}
+                  />
+                  <button
+                    onClick={handleCopyIcalUrl}
+                    className={cn("flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-sm transition-colors shrink-0", icalCopied ? "bg-green-100 text-green-700" : "bg-primary/10 hover:bg-primary/20 text-primary")}
+                  >
+                    {icalCopied ? <><Check className="w-4 h-4" /> Gekopieerd</> : <><Copy className="w-4 h-4" /> Kopieer</>}
+                  </button>
+                </div>
+                <a
+                  href={icalStreamWebcalUrl}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                >
+                  <Rss className="w-3.5 h-3.5" /> Direct openen in agenda-app
+                </a>
+              </div>
+            )}
           </div>
         )}
 

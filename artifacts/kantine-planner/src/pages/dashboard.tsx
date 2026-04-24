@@ -319,6 +319,8 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [filterMode, setFilterMode] = useState<FilterMode>('week');
+  const [myShiftsOnly, setMyShiftsOnly] = useState(false);
+  const [slotFilter, setSlotFilter] = useState<string | null>(null);
 
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
   const [editShift, setEditShift] = useState<ShiftWithAssignments | null>(null);
@@ -350,8 +352,15 @@ export default function Dashboard() {
   // ── Grouped shifts for screen ─────────────────────────────────────────────
   const groupedShifts = useMemo(() => {
     if (!shifts) return {};
-    return groupByDate(shifts);
-  }, [shifts]);
+    let filtered = shifts;
+    if (myShiftsOnly && myVolunteerId) {
+      filtered = filtered.filter(s => s.assignments.some(a => a.volunteerId === myVolunteerId));
+    }
+    if (slotFilter) {
+      filtered = filtered.filter(s => s.slot === slotFilter);
+    }
+    return groupByDate(filtered);
+  }, [shifts, myShiftsOnly, slotFilter, myVolunteerId]);
 
   const sortedDates = Object.keys(groupedShifts).sort();
 
@@ -452,7 +461,7 @@ export default function Dashboard() {
     setTimeout(() => setIcalCopied(false), 2000);
   };
 
-  const { getLabel: getSlotLabel } = useSlots();
+  const { slots, getLabel: getSlotLabel } = useSlots();
 
   const printTitle = useMemo(() => {
     if (!activePrintFilters) return 'Kantine Schema';
@@ -631,6 +640,28 @@ export default function Dashboard() {
               </button>
             </div>
 
+            {myVolunteerId && (
+              <button
+                onClick={() => setMyShiftsOnly(o => !o)}
+                className={cn("px-4 py-2 rounded-xl font-bold text-sm transition-all flex items-center gap-2 border-2", myShiftsOnly ? "bg-primary text-primary-foreground border-primary" : "bg-white border-border text-foreground hover:border-primary/40")}
+              >
+                <User className="w-4 h-4" /> Mijn diensten
+              </button>
+            )}
+
+            {slots.length > 1 && (
+              <select
+                value={slotFilter ?? ''}
+                onChange={e => setSlotFilter(e.target.value || null)}
+                className={cn("px-4 py-2 rounded-xl font-bold text-sm border-2 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all", slotFilter ? "border-primary text-primary" : "border-border text-foreground")}
+              >
+                <option value="">Alle dagdelen</option>
+                {slots.map(s => (
+                  <option key={s.key} value={s.key}>{s.label}</option>
+                ))}
+              </select>
+            )}
+
             <button onClick={() => setIsPrintModalOpen(true)} className="btn-secondary flex items-center gap-2">
               <Printer className="w-5 h-5" /> Printen
             </button>
@@ -666,7 +697,19 @@ export default function Dashboard() {
             <div className="py-20 text-center bg-white border-2 border-dashed border-border rounded-3xl">
               <CalendarIcon className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
               <h3 className="text-2xl font-bold text-foreground mb-2">Geen diensten gevonden</h3>
-              <p className="text-muted-foreground">Er zijn nog geen kantinediensten ingepland voor deze periode.</p>
+              <p className="text-muted-foreground">
+                {myShiftsOnly || slotFilter
+                  ? 'Geen diensten gevonden voor de geselecteerde filters.'
+                  : 'Er zijn nog geen kantinediensten ingepland voor deze periode.'}
+              </p>
+              {(myShiftsOnly || slotFilter) && (
+                <button
+                  onClick={() => { setMyShiftsOnly(false); setSlotFilter(null); }}
+                  className="mt-4 text-sm font-semibold text-primary hover:underline"
+                >
+                  Filters wissen
+                </button>
+              )}
             </div>
           ) : (
             <ShiftsGrid

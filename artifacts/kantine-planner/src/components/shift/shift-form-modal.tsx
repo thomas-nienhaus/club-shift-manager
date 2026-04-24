@@ -5,16 +5,8 @@ import type { ShiftWithAssignments } from '@/lib/types';
 import { format, getDay, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useSlots } from '@/hooks/use-slots';
-
-const DAY_PREFIXES: Record<string, number> = {
-  sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
-  thursday: 4, friday: 5, saturday: 6,
-};
-
-function slotDayIndex(slotKey: string): number | undefined {
-  const prefix = slotKey.split('_')[0].toLowerCase();
-  return DAY_PREFIXES[prefix];
-}
+import { AlertCircle } from 'lucide-react';
+import { slotDayIndex } from '@/utils/slot-utils';
 
 interface ShiftFormModalProps {
   isOpen: boolean;
@@ -29,32 +21,40 @@ export function ShiftFormModal({ isOpen, onClose, editShift, defaultDate }: Shif
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [notes, setNotes] = useState('');
-  const { slots: activeSlots } = useSlots();
+  const { slots: activeSlots, allSlots } = useSlots();
 
   const { toast } = useToast();
 
   const { mutate: createShift, isPending: isCreating } = useCreateShift();
   const { mutate: updateShift, isPending: isUpdating } = useUpdateShift();
 
-  const filteredSlots = useMemo(() => {
+  const activeSlotsForDay = useMemo(() => {
     if (!date) return activeSlots;
-    const dayOfWeek = getDay(parseISO(date));
-    const matching = activeSlots.filter(s => {
+    const dow = getDay(parseISO(date));
+    return activeSlots.filter(s => {
       const idx = slotDayIndex(s.key);
-      return idx === undefined || idx === dayOfWeek;
+      return idx === undefined || idx === dow;
     });
-    return matching.length > 0 ? matching : activeSlots;
   }, [date, activeSlots]);
 
+  const allSlotsForDay = useMemo(() => {
+    if (!date) return allSlots;
+    const dow = getDay(parseISO(date));
+    return allSlots.filter(s => {
+      const idx = slotDayIndex(s.key);
+      return idx === undefined || idx === dow;
+    });
+  }, [date, allSlots]);
+
+  const slotStatus = activeSlotsForDay.length > 0 ? 'available'
+    : allSlotsForDay.length > 0 ? 'inactive'
+    : 'none';
+
   useEffect(() => {
-    if (!date) return;
-    const dayOfWeek = getDay(parseISO(date));
-    const currentIdx = slotDayIndex(slot);
-    if (currentIdx !== undefined && currentIdx !== dayOfWeek) {
-      const first = filteredSlots[0];
-      if (first) setSlot(first.key);
+    if (activeSlotsForDay.length > 0 && !activeSlotsForDay.some(s => s.key === slot)) {
+      setSlot(activeSlotsForDay[0].key);
     }
-  }, [date]);
+  }, [activeSlotsForDay]);
 
   useEffect(() => {
     if (editShift && isOpen) {
@@ -101,9 +101,23 @@ export function ShiftFormModal({ isOpen, onClose, editShift, defaultDate }: Shif
           </div>
           <div>
             <label className="label-text">Dagdeel / Tijdslot</label>
-            <select required value={slot} onChange={e => setSlot(e.target.value)} className="input-field">
-              {filteredSlots.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-            </select>
+            {slotStatus === 'available' && (
+              <select required value={slot} onChange={e => setSlot(e.target.value)} className="input-field">
+                {activeSlotsForDay.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+              </select>
+            )}
+            {slotStatus === 'inactive' && (
+              <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm">
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-amber-600" />
+                <span>Het dagdeel voor deze dag bestaat maar is <strong>niet actief</strong>. Activeer het via <strong>Instellingen → Dagdelen</strong>.</span>
+              </div>
+            )}
+            {slotStatus === 'none' && (
+              <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm">
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-amber-600" />
+                <span>Geen dagdeel aangemaakt voor deze dag. Maak er eerst een aan via <strong>Instellingen → Dagdelen</strong>.</span>
+              </div>
+            )}
           </div>
         </div>
         <div className="grid grid-cols-2 gap-5">
@@ -122,7 +136,7 @@ export function ShiftFormModal({ isOpen, onClose, editShift, defaultDate }: Shif
         </div>
         <div className="flex justify-end gap-3 pt-4 border-t border-border">
           <button type="button" onClick={onClose} className="btn-secondary" disabled={isPending}>Annuleren</button>
-          <button type="submit" className="btn-primary" disabled={isPending}>{isPending ? 'Bezig...' : 'Opslaan'}</button>
+          <button type="submit" className="btn-primary" disabled={isPending || slotStatus !== 'available'}>{isPending ? 'Bezig...' : 'Opslaan'}</button>
         </div>
       </form>
     </Modal>

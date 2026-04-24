@@ -11,6 +11,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   volunteerId: number | null;
   volunteerName: string | null;
+  authId: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,11 +33,13 @@ async function loadCurrentUser(authId: string, email: string): Promise<CurrentUs
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
+  const [authId, setAuthId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
+        setAuthId(session.user.id);
         loadCurrentUser(session.user.id, session.user.email!).then(u => {
           setUser(u);
           setIsLoading(false);
@@ -48,12 +51,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
+        setAuthId(session.user.id);
         loadCurrentUser(session.user.id, session.user.email!).then(setUser);
         if ((event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') && sessionStorage.getItem('pending_password_setup')) {
           sessionStorage.removeItem('pending_password_setup');
           window.location.replace(window.location.origin + window.location.pathname.replace(/\/$/, '') + '/set-password');
         }
       } else {
+        setAuthId(null);
         setUser(null);
       }
     });
@@ -68,6 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: user !== null,
     volunteerId: user?.volunteerId ?? null,
     volunteerName: user?.volunteerName ?? null,
+    authId,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

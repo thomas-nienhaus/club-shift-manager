@@ -7,7 +7,7 @@ const KEY = ['seasons'] as const;
 async function fetchSeasons(): Promise<Season[]> {
   const { data, error } = await supabase
     .from('seasons')
-    .select('id, name, start_date, end_date, created_at')
+    .select('id, name, start_date, end_date, is_published, created_at')
     .order('start_date');
   if (error) throw error;
 
@@ -28,6 +28,7 @@ async function fetchSeasons(): Promise<Season[]> {
     name: s.name,
     startDate: s.start_date,
     endDate: s.end_date,
+    isPublished: s.is_published,
     createdAt: s.created_at,
     shiftCount: countMap.get(s.id) ?? 0,
   }));
@@ -48,9 +49,26 @@ export function useCreateSeason() {
         .select()
         .single();
       if (error) throw error;
-      return { id: data.id, name: data.name, startDate: data.start_date, endDate: data.end_date, createdAt: data.created_at, shiftCount: 0 };
+      return { id: data.id, name: data.name, startDate: data.start_date, endDate: data.end_date, isPublished: data.is_published, createdAt: data.created_at, shiftCount: 0 };
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+  });
+}
+
+export function usePublishSeason() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, isPublished }: { id: number; isPublished: boolean }) => {
+      const { error } = await supabase
+        .from('seasons')
+        .update({ is_published: isPublished })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEY });
+      qc.invalidateQueries({ queryKey: ['shifts'] });
+    },
   });
 }
 

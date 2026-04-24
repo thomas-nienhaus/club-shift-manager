@@ -1,21 +1,18 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { AuthGuard } from '@/contexts/auth-context';
-import { useListSeasons, useCreateSeason, useDeleteSeason } from '@/hooks/use-seasons';
+import { useListSeasons, useCreateSeason, useDeleteSeason, usePublishSeason } from '@/hooks/use-seasons';
 import type { Season } from '@/lib/types';
-import { Plus, Trash2, Calendar as CalendarIcon, Upload, Download, FileSpreadsheet, Eye, Wand2, Info } from 'lucide-react';
+import { Plus, Trash2, Calendar as CalendarIcon, Eye, Wand2, Info, Globe, EyeOff } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { format, parseISO } from 'date-fns';
 import { nl } from 'date-fns/locale';
-import * as XLSX from 'xlsx';
 import { Link } from 'wouter';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useSlots } from '@/hooks/use-slots';
 import { generateSeasonShifts } from '@/utils/season-generator';
-import { importSeasonSchedule } from '@/utils/season-importer';
 
 export default function Seasons() {
   const queryClient = useQueryClient();
@@ -23,11 +20,26 @@ export default function Seasons() {
 
   const { data: seasons, isLoading } = useListSeasons();
   const { mutate: deleteSeason, isPending: isDeleting } = useDeleteSeason();
+  const { mutate: publishSeason, isPending: isPublishing } = usePublishSeason();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [importSeason, setImportSeason] = useState<Season | null>(null);
+  const handleTogglePublish = (season: Season) => {
+    const nextState = !season.isPublished;
+    publishSeason({ id: season.id, isPublished: nextState }, {
+      onSuccess: () => {
+        toast({
+          title: nextState ? "Gepubliceerd" : "Verborgen",
+          description: nextState
+            ? `Seizoen "${season.name}" is nu zichtbaar voor vrijwilligers.`
+            : `Seizoen "${season.name}" is nu verborgen voor vrijwilligers.`,
+        });
+      },
+      onError: () => {
+        toast({ title: "Fout", description: "Kon publicatiestatus niet wijzigen.", variant: "destructive" });
+      },
+    });
+  };
 
   const handleDelete = (season: Season) => {
     if (window.confirm(`Weet je zeker dat je seizoen "${season.name}" wilt verwijderen? Dit verwijdert ook alle gekoppelde diensten.`)) {
@@ -42,29 +54,6 @@ export default function Seasons() {
         }
       });
     }
-  };
-
-  const handleOpenImport = (season: Season) => {
-    setImportSeason(season);
-    setIsImportModalOpen(true);
-  };
-
-  const handleDownloadTemplate = () => {
-    const data = [
-      { Datum: '03-09-2025', Dagdeel: '', '1e Elftal Thuis': '' },
-      { Datum: '06-09-2025', Dagdeel: '', '1e Elftal Thuis': '' },
-      { Datum: '07-09-2025', Dagdeel: '', '1e Elftal Thuis': 'Ja' },
-      { Datum: '10-09-2025', Dagdeel: '', '1e Elftal Thuis': '' },
-      { Datum: '13-09-2025', Dagdeel: '', '1e Elftal Thuis': '' },
-      { Datum: '14-09-2025', Dagdeel: '', '1e Elftal Thuis': '' },
-    ];
-
-    const ws = XLSX.utils.json_to_sheet(data);
-    ws['!cols'] = [{ wch: 14 }, { wch: 18 }, { wch: 18 }];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Rooster");
-
-    XLSX.writeFile(wb, "rooster_template.xlsx");
   };
 
   return (
@@ -95,9 +84,14 @@ export default function Seasons() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {seasons?.map(season => (
-              <div key={season.id} className="bg-white rounded-2xl border-2 border-border p-6 shadow-sm flex flex-col hover:border-primary/50 transition-colors">
+              <div key={season.id} className={`bg-white rounded-2xl border-2 p-6 shadow-sm flex flex-col transition-colors ${season.isPublished ? 'border-green-200 hover:border-green-400' : 'border-border hover:border-primary/50'}`}>
                 <div className="mb-4">
-                  <h3 className="text-2xl font-display font-bold mb-1">{season.name}</h3>
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <h3 className="text-2xl font-display font-bold">{season.name}</h3>
+                    <span className={`shrink-0 text-xs font-bold px-2 py-1 rounded-lg ${season.isPublished ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {season.isPublished ? 'Gepubliceerd' : 'Concept'}
+                    </span>
+                  </div>
                   <div className="text-muted-foreground text-sm font-medium flex items-center gap-2">
                     <CalendarIcon className="w-4 h-4" />
                     {format(parseISO(season.startDate), 'd MMM yyyy', { locale: nl })} - {format(parseISO(season.endDate), 'd MMM yyyy', { locale: nl })}
@@ -111,10 +105,17 @@ export default function Seasons() {
 
                 <div className="mt-auto space-y-3">
                   <button
-                    onClick={() => handleOpenImport(season)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                    onClick={() => handleTogglePublish(season)}
+                    disabled={isPublishing}
+                    className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-colors ${
+                      season.isPublished
+                        ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border-2 border-amber-200'
+                        : 'bg-green-50 text-green-700 hover:bg-green-100 border-2 border-green-200'
+                    }`}
                   >
-                    <Upload className="w-4 h-4" /> Rooster Importeren
+                    {season.isPublished
+                      ? <><EyeOff className="w-4 h-4" /> Verbergen voor vrijwilligers</>
+                      : <><Globe className="w-4 h-4" /> Publiceren voor vrijwilligers</>}
                   </button>
 
                   <div className="flex gap-3">
@@ -141,27 +142,14 @@ export default function Seasons() {
         <CreateSeasonModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
-          onSuccess={(newSeason) => {
-            setIsCreateModalOpen(false);
-            handleOpenImport(newSeason);
-          }}
-        />
-
-        <ImportModal
-          isOpen={isImportModalOpen}
-          onClose={() => {
-            setIsImportModalOpen(false);
-            setImportSeason(null);
-          }}
-          season={importSeason}
-          onDownloadTemplate={handleDownloadTemplate}
+          onSuccess={() => setIsCreateModalOpen(false)}
         />
       </AppLayout>
     </AuthGuard>
   );
 }
 
-function CreateSeasonModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, onClose: () => void, onSuccess: (season: Season) => void }) {
+function CreateSeasonModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, onClose: () => void, onSuccess: () => void }) {
   const [name, setName] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -204,7 +192,7 @@ function CreateSeasonModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, on
           toast({ title: "Aangemaakt", description: "Nieuw seizoen is aangemaakt." });
         }
 
-        onSuccess(res);
+        onSuccess();
         setName(''); setStartDate(''); setEndDate('');
       },
       onError: () => {
@@ -284,117 +272,6 @@ function CreateSeasonModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, on
             </button>
           </DialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function ImportModal({ isOpen, onClose, season, onDownloadTemplate }: { isOpen: boolean, onClose: () => void, season: Season | null, onDownloadTemplate: () => void }) {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
-  const { mutate: doImport, isPending } = useMutation({
-    mutationFn: ({ seasonId, file }: { seasonId: number; file: File }) =>
-      importSeasonSchedule(seasonId, file),
-    onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: ['seasons'] });
-      queryClient.invalidateQueries({ queryKey: ['shifts'] });
-      toast({
-        title: "Import Succesvol",
-        description: `Er zijn ${res.shiftsCreated} diensten aangemaakt voor dit seizoen.`
-      });
-      setSelectedFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      onClose();
-    },
-    onError: (err: any) => {
-      toast({
-        title: "Import Mislukt",
-        description: err.message || "Er is een fout opgetreden bij het importeren.",
-        variant: "destructive"
-      });
-    }
-  });
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setSelectedFile(e.target.files[0]);
-    }
-  };
-
-  const handleImport = () => {
-    if (!season || !selectedFile) return;
-    doImport({ seasonId: season.id, file: selectedFile });
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open) {
-        setSelectedFile(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-        onClose();
-      }
-    }}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-display font-bold">Rooster Importeren</DialogTitle>
-          <DialogDescription>
-            Importeer een Excel (.xlsx) bestand voor {season?.name}.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-6 pt-4">
-          <div className="bg-blue-50 text-blue-900 p-4 rounded-xl text-sm border border-blue-100">
-            <h4 className="font-bold mb-2 flex items-center gap-2">
-              <FileSpreadsheet className="w-4 h-4" /> Vereist Bestandsformaat
-            </h4>
-            <p className="mb-2">Het Excel bestand moet de volgende kolommen bevatten:</p>
-            <ul className="list-disc pl-5 space-y-1 mb-4">
-              <li><strong>Datum</strong>: verplicht (dd-mm-yyyy of dd/mm/yyyy)</li>
-              <li><strong>Dagdeel</strong>: optioneel (Woensdagavond, Donderdagavond, Zaterdagochtend, Zaterdagmiddag, Zondagochtend, Zondagmiddag)</li>
-            </ul>
-            <p className="text-blue-800/80 text-xs">Als Dagdeel ontbreekt, wordt dit automatisch bepaald op basis van de dag.</p>
-
-            <button
-              onClick={onDownloadTemplate}
-              className="mt-4 flex items-center gap-2 text-blue-700 hover:text-blue-900 font-bold bg-white px-3 py-1.5 rounded-lg border border-blue-200 hover:border-blue-300 transition-colors"
-            >
-              <Download className="w-4 h-4" /> Download Voorbeeld
-            </button>
-          </div>
-
-          <div>
-            <label className="label-text">Kies .xlsx bestand</label>
-            <input
-              type="file"
-              accept=".xlsx, .xls"
-              onChange={handleFileChange}
-              ref={fileInputRef}
-              className="block w-full text-sm text-muted-foreground
-                file:mr-4 file:py-3 file:px-4
-                file:rounded-xl file:border-0
-                file:text-sm file:font-bold
-                file:bg-primary/10 file:text-primary
-                hover:file:bg-primary/20
-                cursor-pointer transition-colors"
-            />
-          </div>
-        </div>
-
-        <DialogFooter className="pt-6">
-          <button type="button" onClick={onClose} className="btn-secondary w-full sm:w-auto">Annuleren</button>
-          <button
-            type="button"
-            onClick={handleImport}
-            disabled={!selectedFile || isPending}
-            className="btn-primary w-full sm:w-auto flex items-center justify-center gap-2"
-          >
-            {isPending ? "Bezig..." : <><Upload className="w-4 h-4" /> Importeren</>}
-          </button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

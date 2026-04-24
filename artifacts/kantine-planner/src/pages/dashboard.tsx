@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { AuthGuard, useAuth } from '@/contexts/auth-context';
 import { useListShifts } from '@/hooks/use-shifts';
 import { useListVolunteers } from '@/hooks/use-volunteers';
+import { useListSeasons } from '@/hooks/use-seasons';
 import type { ShiftWithAssignments } from '@/lib/types';
 import { format, addWeeks, subWeeks, startOfWeek, endOfWeek, parseISO } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import {
-  ChevronLeft, ChevronRight, Printer, Calendar as CalendarIcon,
-  List as ListIcon, X, AlertCircle, Settings2, User, Download, ArrowLeftRight,
+  ChevronLeft, ChevronRight, ChevronDown, Printer, Calendar as CalendarIcon,
+  List as ListIcon, X, AlertCircle, Settings2, User, Download, ArrowLeftRight, Rss, Copy, Check,
 } from 'lucide-react';
 import { ShiftsGrid } from '@/components/shift/shifts-grid';
 import { ShiftFormModal } from '@/components/shift/shift-form-modal';
@@ -29,6 +30,8 @@ interface PrintFilters {
   slotFilter: string[];
   volunteerId: number | null;
   volunteerName: string | null;
+  seasonId: number | null;
+  seasonName: string | null;
 }
 
 // ─── Print Options Modal ──────────────────────────────────────────────────────
@@ -40,12 +43,17 @@ interface PrintOptionsModalProps {
 
 function PrintOptionsModal({ isOpen, onClose, onPrint }: PrintOptionsModalProps) {
   const [slotFilter, setSlotFilter] = useState<string[] | null>(null);
+  const [slotDropdownOpen, setSlotDropdownOpen] = useState(false);
   const [volunteerId, setVolunteerId] = useState<number | null>(null);
+  const [seasonId, setSeasonId] = useState<number | null>(null);
   const { data: volunteers } = useListVolunteers();
+  const { data: seasons } = useListSeasons();
   const { slots } = useSlots();
+  const slotDropdownRef = useRef<HTMLDivElement>(null);
 
   const allSlotKeys = slots.map(s => s.key);
   const allSelected = slotFilter === null;
+  const noneSelected = slotFilter !== null && slotFilter.length === 0;
 
   const isSlotChecked = (key: string) => slotFilter === null || slotFilter.includes(key);
 
@@ -57,15 +65,31 @@ function PrintOptionsModal({ isOpen, onClose, onPrint }: PrintOptionsModalProps)
     });
   };
 
+  useEffect(() => {
+    if (!slotDropdownOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (slotDropdownRef.current && !slotDropdownRef.current.contains(e.target as Node)) {
+        setSlotDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [slotDropdownOpen]);
+
   const handlePrint = () => {
     const vol = volunteers?.find(v => v.id === volunteerId);
-    onPrint({ slotFilter: slotFilter ?? [], volunteerId, volunteerName: vol?.name ?? null });
+    const season = seasons?.find(s => s.id === seasonId);
+    onPrint({ slotFilter: slotFilter ?? [], volunteerId, volunteerName: vol?.name ?? null, seasonId, seasonName: season?.name ?? null });
     onClose();
   };
 
-  const reset = () => { setSlotFilter(null); setVolunteerId(null); };
+  const reset = () => { setSlotFilter(null); setVolunteerId(null); setSeasonId(null); };
 
-  const noneSelected = slotFilter !== null && slotFilter.length === 0;
+  const slotLabel = allSelected
+    ? 'Alle dagdelen'
+    : noneSelected
+    ? 'Geen dagdelen'
+    : `${slotFilter!.length} van ${allSlotKeys.length} geselecteerd`;
 
   if (!isOpen) return null;
 
@@ -80,58 +104,75 @@ function PrintOptionsModal({ isOpen, onClose, onPrint }: PrintOptionsModalProps)
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
         </div>
 
-        <div className="p-6 space-y-6 overflow-y-auto flex-1">
+        <div className="p-6 space-y-5 overflow-y-auto flex-1">
+          {seasons && seasons.length > 0 && (
+            <div>
+              <label className="block text-sm font-bold mb-2 uppercase tracking-wide text-muted-foreground">Seizoen</label>
+              <select
+                value={seasonId ?? ''}
+                onChange={e => setSeasonId(e.target.value ? Number(e.target.value) : null)}
+                className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30"
+              >
+                <option value="">Alle seizoenen</option>
+                {seasons.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {slots.length > 0 && (
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <label className="block text-sm font-bold uppercase tracking-wide text-muted-foreground">Dagdelen</label>
+              <label className="block text-sm font-bold mb-2 uppercase tracking-wide text-muted-foreground">Dagdelen</label>
+              <div className="relative" ref={slotDropdownRef}>
                 <button
-                  onClick={() => setSlotFilter(allSelected ? [] : null)}
-                  className="text-xs font-semibold text-primary hover:underline"
+                  type="button"
+                  onClick={() => setSlotDropdownOpen(o => !o)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-4 py-2.5 rounded-xl border bg-muted/30 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors",
+                    noneSelected ? "border-amber-400 text-amber-700" : "border-border text-foreground"
+                  )}
                 >
-                  {allSelected ? 'Niets selecteren' : 'Alles selecteren'}
+                  <span>{slotLabel}</span>
+                  <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform duration-150", slotDropdownOpen && "rotate-180")} />
                 </button>
-              </div>
-              <div className="space-y-1.5">
-                {slots.map(slot => (
-                  <label
-                    key={slot.key}
-                    className={cn(
-                      "flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all",
-                      isSlotChecked(slot.key)
-                        ? "border-primary/40 bg-primary/5"
-                        : "border-border hover:border-primary/20 hover:bg-muted/30"
-                    )}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isSlotChecked(slot.key)}
-                      onChange={() => toggleSlot(slot.key)}
-                      className="w-4 h-4 rounded accent-primary flex-shrink-0"
-                    />
-                    <span className={cn("text-sm font-semibold", isSlotChecked(slot.key) ? "text-primary" : "text-foreground")}>
-                      {slot.label}
-                    </span>
-                  </label>
-                ))}
+
+                {slotDropdownOpen && (
+                  <div className="absolute z-20 mt-1 w-full bg-white border border-border rounded-xl shadow-lg overflow-hidden">
+                    <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30">
+                      <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Selectie</span>
+                      <button
+                        type="button"
+                        onClick={() => setSlotFilter(allSelected ? [] : null)}
+                        className="text-xs font-semibold text-primary hover:underline"
+                      >
+                        {allSelected ? 'Niets selecteren' : 'Alles selecteren'}
+                      </button>
+                    </div>
+                    {slots.map(slot => (
+                      <label key={slot.key} className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted/40 cursor-pointer border-b border-border/50 last:border-0">
+                        <input
+                          type="checkbox"
+                          checked={isSlotChecked(slot.key)}
+                          onChange={() => toggleSlot(slot.key)}
+                          className="w-4 h-4 rounded accent-primary flex-shrink-0"
+                        />
+                        <span className="text-sm font-medium">{slot.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
               {noneSelected && (
                 <p className="text-xs text-amber-600 font-semibold mt-1.5">
                   Geen dagdelen geselecteerd — selecteer er minimaal één om af te drukken.
                 </p>
               )}
-              {!allSelected && !noneSelected && (
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  {slotFilter!.length} van {allSlotKeys.length} dagdelen geselecteerd.
-                </p>
-              )}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-bold mb-2 uppercase tracking-wide text-muted-foreground">
-              Vrijwilliger (optioneel)
-            </label>
+            <label className="block text-sm font-bold mb-2 uppercase tracking-wide text-muted-foreground">Vrijwilliger</label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               <select
@@ -145,11 +186,6 @@ function PrintOptionsModal({ isOpen, onClose, onPrint }: PrintOptionsModalProps)
                 ))}
               </select>
             </div>
-            {volunteerId && (
-              <p className="text-xs text-muted-foreground mt-1.5">
-                Alleen diensten waarbij deze vrijwilliger is ingedeeld worden afgedrukt.
-              </p>
-            )}
           </div>
         </div>
 
@@ -233,6 +269,12 @@ function PrintWeeklyTable({ shifts }: { shifts: ShiftWithAssignments[] }) {
         <div key={week.weekKey} className="print-week-block">
           <h2 className="print-week-heading">{week.weekLabel}</h2>
           <table className="print-schedule-table">
+            <colgroup>
+              <col style={{ width: '13%' }} />
+              <col style={{ width: '19%' }} />
+              <col style={{ width: '15%' }} />
+              <col style={{ width: '53%' }} />
+            </colgroup>
             <thead>
               <tr>
                 <th>Datum</th>
@@ -273,7 +315,7 @@ function PrintWeeklyTable({ shifts }: { shifts: ShiftWithAssignments[] }) {
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 export default function Dashboard() {
-  const { isAdmin, volunteerId: myVolunteerId, volunteerName: myVolunteerName } = useAuth();
+  const { isAdmin, volunteerId: myVolunteerId, volunteerName: myVolunteerName, authId } = useAuth();
   const { toast } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [filterMode, setFilterMode] = useState<FilterMode>('week');
@@ -286,6 +328,9 @@ export default function Dashboard() {
 
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [activePrintFilters, setActivePrintFilters] = useState<PrintFilters | null>(null);
+
+  const [icalStreamOpen, setIcalStreamOpen] = useState(false);
+  const [icalCopied, setIcalCopied] = useState(false);
 
   const [isOfferResponseOpen, setIsOfferResponseOpen] = useState(false);
   const [respondOffer, setRespondOffer] = useState<ShiftOffer | null>(null);
@@ -336,6 +381,10 @@ export default function Dashboard() {
     if (!activePrintFilters || !allShifts) return {};
 
     let filtered = [...allShifts];
+
+    if (activePrintFilters.seasonId !== null) {
+      filtered = filtered.filter(s => s.seasonId === activePrintFilters.seasonId);
+    }
 
     if (activePrintFilters.slotFilter.length > 0) {
       filtered = filtered.filter(s => activePrintFilters.slotFilter.includes(s.slot));
@@ -390,11 +439,25 @@ export default function Dashboard() {
     }
   };
 
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+  const icalStreamHttpUrl = myVolunteerId && authId
+    ? `${supabaseUrl}/functions/v1/ical?volunteerId=${myVolunteerId}&token=${authId}`
+    : null;
+  const icalStreamWebcalUrl = icalStreamHttpUrl?.replace(/^https?:\/\//, 'webcal://') ?? null;
+
+  const handleCopyIcalUrl = async () => {
+    if (!icalStreamHttpUrl) return;
+    await navigator.clipboard.writeText(icalStreamHttpUrl);
+    setIcalCopied(true);
+    setTimeout(() => setIcalCopied(false), 2000);
+  };
+
   const { getLabel: getSlotLabel } = useSlots();
 
   const printTitle = useMemo(() => {
-    if (!activePrintFilters) return 'Voetbalclub Kantine Schema';
-    const parts: string[] = ['Voetbalclub Kantine Schema'];
+    if (!activePrintFilters) return 'Kantine Schema';
+    const base = activePrintFilters.seasonName ?? 'Kantine Schema';
+    const parts: string[] = [base];
     if (activePrintFilters.slotFilter.length > 0) {
       const labels = activePrintFilters.slotFilter.map(k => getSlotLabel(k)).join(', ');
       parts.push(`— ${labels}`);
@@ -408,22 +471,65 @@ export default function Dashboard() {
       <AppLayout>
         {/* ── Volunteer welcome banner ── */}
         {myVolunteerId && (
-          <div className="flex items-center gap-4 bg-primary/10 border-2 border-primary/20 rounded-2xl px-5 py-4 mb-6 no-print">
-            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <User className="w-5 h-5 text-primary" />
+          <div className="bg-primary/10 border-2 border-primary/20 rounded-2xl mb-6 no-print overflow-hidden">
+            <div className="flex items-center gap-4 px-5 py-4">
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <User className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-foreground">Welkom, {myVolunteerName}!</p>
+                <p className="text-sm text-muted-foreground">Synchroniseer jouw diensten met je agenda-app.</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {icalStreamWebcalUrl && (
+                  <button
+                    onClick={() => setIcalStreamOpen(o => !o)}
+                    className={cn("flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-colors", icalStreamOpen ? "bg-primary text-primary-foreground" : "bg-primary/20 hover:bg-primary/30 text-primary")}
+                    title="Abonneer op jouw agenda-stream"
+                  >
+                    <Rss className="w-4 h-4" />
+                    <span className="hidden sm:inline">Abonneren</span>
+                  </button>
+                )}
+                <button
+                  onClick={handleIcalDownload}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/20 hover:bg-primary/30 text-primary font-semibold text-sm transition-colors"
+                  title="Download jouw diensten als agenda-bestand"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="hidden sm:inline">Downloaden</span>
+                </button>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-foreground">Welkom, {myVolunteerName}!</p>
-              <p className="text-sm text-muted-foreground">Download jouw persoonlijke diensten als agenda-bestand.</p>
-            </div>
-            <button
-              onClick={handleIcalDownload}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/20 hover:bg-primary/30 text-primary font-semibold text-sm transition-colors shrink-0"
-              title="Download jouw diensten als agenda-bestand"
-            >
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">iCal downloaden</span>
-            </button>
+
+            {icalStreamOpen && icalStreamHttpUrl && icalStreamWebcalUrl && (
+              <div className="border-t-2 border-primary/20 px-5 py-4 bg-white/60">
+                <p className="text-sm font-bold text-foreground mb-1">Agenda-abonnement</p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Voeg de URL hieronder toe in Google Calendar, Apple Agenda of Outlook. Nieuwe diensten verschijnen dan automatisch.
+                </p>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    readOnly
+                    value={icalStreamHttpUrl}
+                    className="flex-1 px-3 py-2 text-xs font-mono bg-white border-2 border-border rounded-xl text-foreground focus:outline-none focus:border-primary"
+                    onFocus={e => e.target.select()}
+                  />
+                  <button
+                    onClick={handleCopyIcalUrl}
+                    className={cn("flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-sm transition-colors shrink-0", icalCopied ? "bg-green-100 text-green-700" : "bg-primary/10 hover:bg-primary/20 text-primary")}
+                  >
+                    {icalCopied ? <><Check className="w-4 h-4" /> Gekopieerd</> : <><Copy className="w-4 h-4" /> Kopieer</>}
+                  </button>
+                </div>
+                <a
+                  href={icalStreamWebcalUrl}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                >
+                  <Rss className="w-3.5 h-3.5" /> Direct openen in agenda-app
+                </a>
+              </div>
+            )}
           </div>
         )}
 

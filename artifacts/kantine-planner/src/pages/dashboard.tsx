@@ -9,7 +9,8 @@ import { format, addWeeks, subWeeks, startOfWeek, endOfWeek, parseISO } from 'da
 import { nl } from 'date-fns/locale';
 import {
   ChevronLeft, ChevronRight, ChevronDown, Printer, Calendar as CalendarIcon,
-  List as ListIcon, X, AlertCircle, Settings2, User, Download, ArrowLeftRight, Rss, Copy, Check,
+  List as ListIcon, X, AlertCircle, Settings2, User, Download, ArrowLeftRight,
+  Rss, Copy, Check, SlidersHorizontal,
 } from 'lucide-react';
 import { ShiftsGrid } from '@/components/shift/shifts-grid';
 import { ShiftFormModal } from '@/components/shift/shift-form-modal';
@@ -321,6 +322,8 @@ export default function Dashboard() {
   const [filterMode, setFilterMode] = useState<FilterMode>('week');
   const [myShiftsOnly, setMyShiftsOnly] = useState(false);
   const [slotFilter, setSlotFilter] = useState<string | null>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterDropdownRef = useRef<HTMLDivElement>(null);
 
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
   const [editShift, setEditShift] = useState<ShiftWithAssignments | null>(null);
@@ -407,6 +410,18 @@ export default function Dashboard() {
 
     return groupByDate(filtered);
   }, [activePrintFilters, allShifts]);
+
+  // ── Filter dropdown click-outside ────────────────────────────────────────
+  useEffect(() => {
+    if (!filterOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(e.target as Node)) {
+        setFilterOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [filterOpen]);
 
   // ── Print trigger ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -619,48 +634,106 @@ export default function Dashboard() {
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8 no-print">
           <div>
             <h1 className="text-4xl font-display font-extrabold mb-2">Kantine Planning</h1>
-            <p className="text-muted-foreground text-lg">
-              {'Bekijk de volledige kantine planning.'}
-            </p>
+            <p className="text-muted-foreground text-lg">Bekijk de volledige kantine planning.</p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex bg-muted p-1 rounded-xl border border-border">
-              <button
-                onClick={() => setFilterMode('week')}
-                className={cn("px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2", filterMode === 'week' ? "bg-white shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
-              >
-                <CalendarIcon className="w-4 h-4" /> Week
-              </button>
-              <button
-                onClick={() => setFilterMode('all')}
-                className={cn("px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2", filterMode === 'all' ? "bg-white shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
-              >
-                <ListIcon className="w-4 h-4" /> Alle
-              </button>
+          <div className="flex items-center gap-3">
+            {/* ── Filter dropdown ── */}
+            <div className="relative" ref={filterDropdownRef}>
+              {(() => {
+                const activeCount = (myShiftsOnly ? 1 : 0) + (slotFilter ? 1 : 0) + (filterMode === 'all' ? 1 : 0);
+                return (
+                  <button
+                    onClick={() => setFilterOpen(o => !o)}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-3 rounded-xl font-bold border-2 transition-all",
+                      filterOpen || activeCount > 0
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-white border-border text-foreground hover:border-primary/40"
+                    )}
+                  >
+                    <SlidersHorizontal className="w-4 h-4" />
+                    Filters
+                    {activeCount > 0 && (
+                      <span className="bg-white/30 text-inherit text-xs font-bold px-1.5 py-0.5 rounded-md">
+                        {activeCount}
+                      </span>
+                    )}
+                    <ChevronDown className={cn("w-4 h-4 transition-transform duration-150", filterOpen && "rotate-180")} />
+                  </button>
+                );
+              })()}
+
+              {filterOpen && (
+                <div className="absolute right-0 mt-2 w-72 bg-white border-2 border-border rounded-2xl shadow-xl z-20 overflow-hidden">
+                  <div className="p-4 space-y-5">
+
+                    {/* Weergave */}
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">Weergave</p>
+                      <div className="flex bg-muted p-1 rounded-xl border border-border">
+                        <button
+                          onClick={() => setFilterMode('week')}
+                          className={cn("flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-bold text-sm transition-all", filterMode === 'week' ? "bg-white shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
+                        >
+                          <CalendarIcon className="w-4 h-4" /> Week
+                        </button>
+                        <button
+                          onClick={() => setFilterMode('all')}
+                          className={cn("flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-bold text-sm transition-all", filterMode === 'all' ? "bg-white shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
+                        >
+                          <ListIcon className="w-4 h-4" /> Alle
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Mijn diensten */}
+                    {myVolunteerId && (
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">Mijn diensten</p>
+                        <button
+                          onClick={() => setMyShiftsOnly(o => !o)}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold text-sm border-2 transition-all",
+                            myShiftsOnly ? "bg-primary/10 border-primary text-primary" : "bg-muted/30 border-border text-foreground hover:border-primary/40"
+                          )}
+                        >
+                          <User className="w-4 h-4" />
+                          {myShiftsOnly ? 'Alleen mijn diensten' : 'Alle vrijwilligers'}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Dagdeel */}
+                    {slots.length > 1 && (
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">Dagdeel</p>
+                        <select
+                          value={slotFilter ?? ''}
+                          onChange={e => setSlotFilter(e.target.value || null)}
+                          className="w-full px-4 py-2.5 rounded-xl font-bold text-sm border-2 border-border bg-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                        >
+                          <option value="">Alle dagdelen</option>
+                          {slots.map(s => (
+                            <option key={s.key} value={s.key}>{s.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Wis filters */}
+                    {(myShiftsOnly || slotFilter || filterMode === 'all') && (
+                      <button
+                        onClick={() => { setMyShiftsOnly(false); setSlotFilter(null); setFilterMode('week'); }}
+                        className="w-full text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors py-1"
+                      >
+                        Filters wissen
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-
-            {myVolunteerId && (
-              <button
-                onClick={() => setMyShiftsOnly(o => !o)}
-                className={cn("px-4 py-2 rounded-xl font-bold text-sm transition-all flex items-center gap-2 border-2", myShiftsOnly ? "bg-primary text-primary-foreground border-primary" : "bg-white border-border text-foreground hover:border-primary/40")}
-              >
-                <User className="w-4 h-4" /> Mijn diensten
-              </button>
-            )}
-
-            {slots.length > 1 && (
-              <select
-                value={slotFilter ?? ''}
-                onChange={e => setSlotFilter(e.target.value || null)}
-                className={cn("px-4 py-2 rounded-xl font-bold text-sm border-2 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all", slotFilter ? "border-primary text-primary" : "border-border text-foreground")}
-              >
-                <option value="">Alle dagdelen</option>
-                {slots.map(s => (
-                  <option key={s.key} value={s.key}>{s.label}</option>
-                ))}
-              </select>
-            )}
 
             <button onClick={() => setIsPrintModalOpen(true)} className="btn-secondary flex items-center gap-2">
               <Printer className="w-5 h-5" /> Printen
@@ -704,7 +777,7 @@ export default function Dashboard() {
               </p>
               {(myShiftsOnly || slotFilter) && (
                 <button
-                  onClick={() => { setMyShiftsOnly(false); setSlotFilter(null); }}
+                  onClick={() => { setMyShiftsOnly(false); setSlotFilter(null); setFilterMode('week'); }}
                   className="mt-4 text-sm font-semibold text-primary hover:underline"
                 >
                   Filters wissen

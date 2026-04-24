@@ -120,7 +120,7 @@ export function ShiftFormModal({ isOpen, onClose, editShift, defaultDate }: Shif
             )}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div>
             <label className="label-text">Begintijd (optioneel)</label>
             <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="input-field" />

@@ -107,7 +107,7 @@ export default function Seasons() {
                   <button
                     onClick={() => handleTogglePublish(season)}
                     disabled={isPublishing}
-                    className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-colors ${
+                    className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold transition-colors ${
                       season.isPublished
                         ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border-2 border-amber-200'
                         : 'bg-green-50 text-green-700 hover:bg-green-100 border-2 border-green-200'
@@ -120,14 +120,14 @@ export default function Seasons() {
 
                   <div className="flex gap-3">
                     <Link href={`/?startDate=${season.startDate}&endDate=${season.endDate}`} className="flex-1">
-                      <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold border-2 border-border text-foreground hover:bg-muted transition-colors">
+                      <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold border-2 border-border text-foreground hover:bg-muted transition-colors">
                         <Eye className="w-4 h-4" /> Planning
                       </button>
                     </Link>
                     <button
                       onClick={() => handleDelete(season)}
                       disabled={isDeleting}
-                      className="px-4 py-2.5 rounded-xl font-bold border-2 border-destructive/20 text-destructive hover:bg-destructive/10 transition-colors"
+                      className="p-3 rounded-xl font-bold border-2 border-destructive/20 text-destructive hover:bg-destructive/10 transition-colors"
                       title="Verwijder seizoen"
                     >
                       <Trash2 className="w-5 h-5" />
@@ -221,7 +221,7 @@ function CreateSeasonModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, on
               placeholder="2025-2026"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label-text">Startdatum</label>
               <input type="date" className="input-field" value={startDate} onChange={e => setStartDate(e.target.value)} />

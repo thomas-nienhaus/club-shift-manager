@@ -34,7 +34,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
           <span className="font-display font-bold text-xl tracking-tight">Kantine Planner</span>
         </div>
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2">
+        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-3 rounded-xl">
           {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </header>

@@ -71,3 +71,26 @@ export type CurrentUser = {
   volunteerId: number | null;
   volunteerName: string | null;
 };
+
+export type ShiftOfferResponse = {
+  id: number;
+  offerId: number;
+  responderId: number;
+  type: 'takeover' | 'swap';
+  swapShiftId: number | null;
+  status: 'pending' | 'accepted' | 'declined';
+  createdAt: string;
+  responder: { name: string };
+  swapShift: { date: string; slot: string } | null;
+};
+
+export type ShiftOffer = {
+  id: number;
+  shiftId: number;
+  volunteerId: number;
+  status: 'open' | 'taken' | 'cancelled';
+  createdAt: string;
+  shift: { date: string; slot: string; startTime: string | null; endTime: string | null };
+  volunteer: { name: string };
+  responses: ShiftOfferResponse[];
+};

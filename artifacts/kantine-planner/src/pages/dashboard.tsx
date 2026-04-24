@@ -9,7 +9,7 @@ import { format, addWeeks, subWeeks, startOfWeek, endOfWeek, parseISO } from 'da
 import { nl } from 'date-fns/locale';
 import {
   ChevronLeft, ChevronRight, ChevronDown, Printer, Calendar as CalendarIcon,
-  List as ListIcon, X, AlertCircle, Settings2, User, Download, ArrowLeftRight,
+  List as ListIcon, X, AlertCircle, User, Download, ArrowLeftRight,
   Rss, Copy, Check, SlidersHorizontal,
 } from 'lucide-react';
 import { ShiftsGrid } from '@/components/shift/shifts-grid';
@@ -33,182 +33,6 @@ interface PrintFilters {
   volunteerName: string | null;
   seasonId: number | null;
   seasonName: string | null;
-}
-
-// ─── Print Options Modal ──────────────────────────────────────────────────────
-interface PrintOptionsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onPrint: (filters: PrintFilters) => void;
-}
-
-function PrintOptionsModal({ isOpen, onClose, onPrint }: PrintOptionsModalProps) {
-  const [slotFilter, setSlotFilter] = useState<string[] | null>(null);
-  const [slotDropdownOpen, setSlotDropdownOpen] = useState(false);
-  const [volunteerId, setVolunteerId] = useState<number | null>(null);
-  const [seasonId, setSeasonId] = useState<number | null>(null);
-  const { data: volunteers } = useListVolunteers();
-  const { data: seasons } = useListSeasons();
-  const { slots } = useSlots();
-  const slotDropdownRef = useRef<HTMLDivElement>(null);
-
-  const allSlotKeys = slots.map(s => s.key);
-  const allSelected = slotFilter === null;
-  const noneSelected = slotFilter !== null && slotFilter.length === 0;
-
-  const isSlotChecked = (key: string) => slotFilter === null || slotFilter.includes(key);
-
-  const toggleSlot = (key: string) => {
-    setSlotFilter(prev => {
-      const effective = prev ?? allSlotKeys;
-      const next = effective.includes(key) ? effective.filter(k => k !== key) : [...effective, key];
-      return next.length === allSlotKeys.length ? null : next;
-    });
-  };
-
-  useEffect(() => {
-    if (!slotDropdownOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (slotDropdownRef.current && !slotDropdownRef.current.contains(e.target as Node)) {
-        setSlotDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [slotDropdownOpen]);
-
-  const handlePrint = () => {
-    const vol = volunteers?.find(v => v.id === volunteerId);
-    const season = seasons?.find(s => s.id === seasonId);
-    onPrint({ slotFilter: slotFilter ?? [], volunteerId, volunteerName: vol?.name ?? null, seasonId, seasonName: season?.name ?? null });
-    onClose();
-  };
-
-  const reset = () => { setSlotFilter(null); setVolunteerId(null); setSeasonId(null); };
-
-  const slotLabel = allSelected
-    ? 'Alle dagdelen'
-    : noneSelected
-    ? 'Geen dagdelen'
-    : `${slotFilter!.length} van ${allSlotKeys.length} geselecteerd`;
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between p-6 border-b border-border flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-primary/10"><Settings2 className="w-5 h-5 text-primary" /></div>
-            <h2 className="text-xl font-display font-bold">Afdruk Instellingen</h2>
-          </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
-        </div>
-
-        <div className="p-6 space-y-5 overflow-y-auto flex-1">
-          {seasons && seasons.length > 0 && (
-            <div>
-              <label className="block text-sm font-bold mb-2 uppercase tracking-wide text-muted-foreground">Seizoen</label>
-              <select
-                value={seasonId ?? ''}
-                onChange={e => setSeasonId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                <option value="">Alle seizoenen</option>
-                {seasons.map(s => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {slots.length > 0 && (
-            <div>
-              <label className="block text-sm font-bold mb-2 uppercase tracking-wide text-muted-foreground">Dagdelen</label>
-              <div className="relative" ref={slotDropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setSlotDropdownOpen(o => !o)}
-                  className={cn(
-                    "w-full flex items-center justify-between px-4 py-2.5 rounded-xl border bg-muted/30 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors",
-                    noneSelected ? "border-amber-400 text-amber-700" : "border-border text-foreground"
-                  )}
-                >
-                  <span>{slotLabel}</span>
-                  <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform duration-150", slotDropdownOpen && "rotate-180")} />
-                </button>
-
-                {slotDropdownOpen && (
-                  <div className="absolute z-20 mt-1 w-full bg-white border border-border rounded-xl shadow-lg overflow-hidden">
-                    <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30">
-                      <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Selectie</span>
-                      <button
-                        type="button"
-                        onClick={() => setSlotFilter(allSelected ? [] : null)}
-                        className="text-xs font-semibold text-primary hover:underline"
-                      >
-                        {allSelected ? 'Niets selecteren' : 'Alles selecteren'}
-                      </button>
-                    </div>
-                    {slots.map(slot => (
-                      <label key={slot.key} className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted/40 cursor-pointer border-b border-border/50 last:border-0">
-                        <input
-                          type="checkbox"
-                          checked={isSlotChecked(slot.key)}
-                          onChange={() => toggleSlot(slot.key)}
-                          className="w-4 h-4 rounded accent-primary flex-shrink-0"
-                        />
-                        <span className="text-sm font-medium">{slot.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {noneSelected && (
-                <p className="text-xs text-amber-600 font-semibold mt-1.5">
-                  Geen dagdelen geselecteerd — selecteer er minimaal één om af te drukken.
-                </p>
-              )}
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-bold mb-2 uppercase tracking-wide text-muted-foreground">Vrijwilliger</label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-              <select
-                value={volunteerId ?? ''}
-                onChange={e => setVolunteerId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full rounded-xl border border-border bg-muted/30 pl-9 pr-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                <option value="">Alle vrijwilligers</option>
-                {volunteers?.map(v => (
-                  <option key={v.id} value={v.id}>{v.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-3 p-6 pt-4 border-t border-border flex-shrink-0">
-          <button
-            onClick={reset}
-            className="px-4 py-3 rounded-xl border border-border font-bold hover:bg-muted transition-colors text-sm text-muted-foreground"
-          >
-            Reset
-          </button>
-          <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-border font-bold hover:bg-muted transition-colors">Annuleren</button>
-          <button
-            onClick={handlePrint}
-            disabled={noneSelected}
-            className="flex-1 py-3 rounded-xl font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Printer className="w-4 h-4" /> Afdrukken
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -325,13 +149,18 @@ export default function Dashboard() {
   const [filterOpen, setFilterOpen] = useState(false);
   const filterDropdownRef = useRef<HTMLDivElement>(null);
 
+  const [printOpen, setPrintOpen] = useState(false);
+  const printDropdownRef = useRef<HTMLDivElement>(null);
+  const [printSlotFilter, setPrintSlotFilter] = useState<string[] | null>(null);
+  const [printVolunteerId, setPrintVolunteerId] = useState<number | null>(null);
+  const [printSeasonId, setPrintSeasonId] = useState<number | null>(null);
+
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
   const [editShift, setEditShift] = useState<ShiftWithAssignments | null>(null);
 
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [assignShift, setAssignShift] = useState<ShiftWithAssignments | null>(null);
 
-  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [activePrintFilters, setActivePrintFilters] = useState<PrintFilters | null>(null);
 
   const [icalStreamOpen, setIcalStreamOpen] = useState(false);
@@ -351,6 +180,8 @@ export default function Dashboard() {
   const { data: shifts, isLoading } = useListShifts(screenParams);
   const { data: allShifts } = useListShifts({});
   const { data: shiftOffers } = useListShiftOffers();
+  const { data: volunteers } = useListVolunteers();
+  const { data: seasons } = useListSeasons();
 
   // ── Grouped shifts for screen ─────────────────────────────────────────────
   const groupedShifts = useMemo(() => {
@@ -423,6 +254,18 @@ export default function Dashboard() {
     return () => document.removeEventListener('mousedown', handler);
   }, [filterOpen]);
 
+  // ── Print dropdown click-outside ──────────────────────────────────────────
+  useEffect(() => {
+    if (!printOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (printDropdownRef.current && !printDropdownRef.current.contains(e.target as Node)) {
+        setPrintOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [printOpen]);
+
   // ── Print trigger ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (!activePrintFilters) return;
@@ -451,6 +294,19 @@ export default function Dashboard() {
         onError: () => toast({ title: 'Fout', description: 'Kon de dienst niet aanbieden.', variant: 'destructive' }),
       });
     }
+  };
+
+  const handlePrint = () => {
+    const vol = volunteers?.find(v => v.id === printVolunteerId);
+    const season = seasons?.find(s => s.id === printSeasonId);
+    setActivePrintFilters({
+      slotFilter: printSlotFilter ?? [],
+      volunteerId: printVolunteerId,
+      volunteerName: vol?.name ?? null,
+      seasonId: printSeasonId,
+      seasonName: season?.name ?? null,
+    });
+    setPrintOpen(false);
   };
 
   const handleIcalDownload = async () => {
@@ -735,9 +591,106 @@ export default function Dashboard() {
               )}
             </div>
 
-            <button onClick={() => setIsPrintModalOpen(true)} className="btn-secondary flex items-center gap-2">
-              <Printer className="w-5 h-5" /> Printen
-            </button>
+            {/* ── Print dropdown ── */}
+            <div className="relative" ref={printDropdownRef}>
+              <button
+                onClick={() => setPrintOpen(o => !o)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-3 rounded-xl font-bold border-2 transition-all",
+                  printOpen ? "bg-primary text-primary-foreground border-primary" : "bg-white border-border text-foreground hover:border-primary/40"
+                )}
+              >
+                <Printer className="w-4 h-4" />
+                Printen
+                <ChevronDown className={cn("w-4 h-4 transition-transform duration-150", printOpen && "rotate-180")} />
+              </button>
+
+              {printOpen && (
+                <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-72 max-w-[calc(100vw-1rem)] bg-white border-2 border-border rounded-2xl shadow-xl z-20">
+                  <div className="p-4 space-y-4">
+
+                    {seasons && seasons.length > 0 && (
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">Seizoen</p>
+                        <select
+                          value={printSeasonId ?? ''}
+                          onChange={e => setPrintSeasonId(e.target.value ? Number(e.target.value) : null)}
+                          className="w-full px-4 py-2.5 rounded-xl font-bold text-sm border-2 border-border bg-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        >
+                          <option value="">Alle seizoenen</option>
+                          {seasons.map(s => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {slots.length > 0 && (
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Dagdelen</p>
+                          <button
+                            type="button"
+                            onClick={() => setPrintSlotFilter(printSlotFilter === null ? [] : null)}
+                            className="text-xs font-semibold text-primary hover:underline"
+                          >
+                            {printSlotFilter === null ? 'Niets' : 'Alles'}
+                          </button>
+                        </div>
+                        <div className="space-y-1">
+                          {slots.map(slot => {
+                            const checked = printSlotFilter === null || printSlotFilter.includes(slot.key);
+                            return (
+                              <label key={slot.key} className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-muted/40 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => setPrintSlotFilter(prev => {
+                                    const all = slots.map(s => s.key);
+                                    const eff = prev ?? all;
+                                    const next = eff.includes(slot.key) ? eff.filter(k => k !== slot.key) : [...eff, slot.key];
+                                    return next.length === all.length ? null : next;
+                                  })}
+                                  className="w-4 h-4 rounded accent-primary flex-shrink-0"
+                                />
+                                <span className="text-sm font-medium">{slot.label}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                        {printSlotFilter !== null && printSlotFilter.length === 0 && (
+                          <p className="text-xs text-amber-600 font-semibold mt-1.5 px-1">
+                            Selecteer minimaal één dagdeel.
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">Vrijwilliger</p>
+                      <select
+                        value={printVolunteerId ?? ''}
+                        onChange={e => setPrintVolunteerId(e.target.value ? Number(e.target.value) : null)}
+                        className="w-full px-4 py-2.5 rounded-xl font-bold text-sm border-2 border-border bg-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      >
+                        <option value="">Alle vrijwilligers</option>
+                        {volunteers?.map(v => (
+                          <option key={v.id} value={v.id}>{v.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <button
+                      onClick={handlePrint}
+                      disabled={printSlotFilter !== null && printSlotFilter.length === 0}
+                      className="w-full py-2.5 rounded-xl font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <Printer className="w-4 h-4" /> Afdrukken
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -808,12 +761,6 @@ export default function Dashboard() {
         )}
 
         {/* ── Modals ── */}
-        <PrintOptionsModal
-          isOpen={isPrintModalOpen}
-          onClose={() => setIsPrintModalOpen(false)}
-          onPrint={setActivePrintFilters}
-        />
-
         {myVolunteerId && (
           <OfferResponseModal
             isOpen={isOfferResponseOpen}

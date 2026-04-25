@@ -116,7 +116,7 @@ function SlotFormModal({
         </div>
         <div>
           <label className="label-text">Tijdsduur (optioneel)</label>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="flex-1">
               <label className="text-xs text-muted-foreground font-medium mb-1 block">Begintijd</label>
               <input
@@ -126,7 +126,7 @@ function SlotFormModal({
                 className="input-field"
               />
             </div>
-            <span className="text-muted-foreground font-bold mt-5">–</span>
+            <span className="text-muted-foreground font-bold sm:mt-5 hidden sm:inline">–</span>
             <div className="flex-1">
               <label className="text-xs text-muted-foreground font-medium mb-1 block">Eindtijd</label>
               <input
@@ -298,14 +298,14 @@ export default function AvailabilitySlotsPage() {
                       <div className="flex items-center gap-1 shrink-0">
                         <button
                           onClick={() => { setEditSlot(slot); setIsModalOpen(true); }}
-                          className="p-2 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                          className="p-2.5 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(slot)}
                           disabled={isDeleting}
-                          className="p-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                          className="p-2.5 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

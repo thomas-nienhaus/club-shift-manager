@@ -68,8 +68,8 @@ export function ShiftCard({ shift, onEdit, onAssign, onOffer, myVolunteerId, has
           </div>
           {adminMode && (
             <div className="flex gap-1 no-print">
-              <button onClick={() => onEdit(shift)} disabled={isDeleting} className="p-2 rounded-lg text-muted-foreground hover:bg-white/70 hover:text-foreground transition-colors" title="Bewerken"><Edit2 className="w-4 h-4" /></button>
-              <button onClick={handleDelete} disabled={isDeleting} className="p-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors" title="Verwijderen"><Trash2 className="w-4 h-4" /></button>
+              <button onClick={() => onEdit(shift)} disabled={isDeleting} className="p-2.5 rounded-lg text-muted-foreground hover:bg-white/70 hover:text-foreground transition-colors" title="Bewerken"><Edit2 className="w-4 h-4" /></button>
+              <button onClick={handleDelete} disabled={isDeleting} className="p-2.5 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors" title="Verwijderen"><Trash2 className="w-4 h-4" /></button>
             </div>
           )}
         </div>
@@ -103,8 +103,8 @@ export function ShiftCard({ shift, onEdit, onAssign, onOffer, myVolunteerId, has
         </div>
         {adminMode && (
           <div className="flex gap-1 no-print">
-            <button onClick={() => onEdit(shift)} disabled={isDeleting} className="p-2 rounded-lg text-muted-foreground hover:bg-white/70 hover:text-foreground transition-colors" title="Bewerken"><Edit2 className="w-4 h-4" /></button>
-            <button onClick={handleDelete} disabled={isDeleting} className="p-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors" title="Verwijderen"><Trash2 className="w-4 h-4" /></button>
+            <button onClick={() => onEdit(shift)} disabled={isDeleting} className="p-2.5 rounded-lg text-muted-foreground hover:bg-white/70 hover:text-foreground transition-colors" title="Bewerken"><Edit2 className="w-4 h-4" /></button>
+            <button onClick={handleDelete} disabled={isDeleting} className="p-2.5 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors" title="Verwijderen"><Trash2 className="w-4 h-4" /></button>
           </div>
         )}
       </div>
@@ -123,7 +123,7 @@ export function ShiftCard({ shift, onEdit, onAssign, onOffer, myVolunteerId, has
                 <li key={assignment.id} className="flex items-center justify-between bg-muted/30 border border-border/50 p-2 pl-3 rounded-lg group print-break-inside-avoid">
                   <span className="font-semibold text-sm">{assignment.volunteer.name}</span>
                   {adminMode && (
-                    <button onClick={() => handleUnassign(assignment.volunteerId, assignment.volunteer.name)} disabled={isUnassigning} className="text-muted-foreground hover:text-destructive p-1 opacity-0 group-hover:opacity-100 transition-opacity no-print" title="Verwijder van dienst"><X className="w-4 h-4" /></button>
+                    <button onClick={() => handleUnassign(assignment.volunteerId, assignment.volunteer.name)} disabled={isUnassigning} className="text-muted-foreground hover:text-destructive p-2.5 rounded md:opacity-0 md:group-hover:opacity-100 transition-opacity no-print" title="Verwijder van dienst"><X className="w-4 h-4" /></button>
                   )}
                 </li>
               ))}

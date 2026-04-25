@@ -422,7 +422,7 @@ export default function Dashboard() {
             </h2>
             <ul className="space-y-2">
               {openOffersFromOthers.map(offer => (
-                <li key={offer.id} className="flex items-center justify-between bg-white border border-border rounded-xl px-4 py-3 gap-3">
+                <li key={offer.id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-border rounded-xl px-4 py-3 gap-3">
                   <span className="text-sm font-semibold">
                     <span className="text-primary">{offer.volunteer.name}</span> biedt aan:{' '}
                     <span className="capitalize">{format(parseISO(offer.shift.date), 'd MMMM', { locale: nl })}</span>
@@ -430,7 +430,7 @@ export default function Dashboard() {
                   </span>
                   <button
                     onClick={() => { setRespondOffer(offer); setIsOfferResponseOpen(true); }}
-                    className="shrink-0 text-sm font-bold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                    className="w-full sm:w-auto shrink-0 text-sm font-bold px-4 py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                   >
                     Reageren
                   </button>
@@ -465,7 +465,7 @@ export default function Dashboard() {
                           { responseId: response.id, type: response.type },
                           { onSuccess: () => toast({ title: 'Geaccepteerd', description: 'De dienst is overgedragen.' }) }
                         )}
-                        className="text-sm font-bold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                        className="text-sm font-bold px-4 py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                       >
                         Accepteren
                       </button>
@@ -474,7 +474,7 @@ export default function Dashboard() {
                           { responseId: response.id },
                           { onSuccess: () => toast({ title: 'Geweigerd' }) }
                         )}
-                        className="text-sm font-bold px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors"
+                        className="text-sm font-bold px-4 py-2.5 rounded-lg border border-border hover:bg-muted transition-colors"
                       >
                         Weigeren
                       </button>
@@ -489,11 +489,11 @@ export default function Dashboard() {
         {/* ── Header ── */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8 no-print">
           <div>
-            <h1 className="text-4xl font-display font-extrabold mb-2">Kantine Planning</h1>
+            <h1 className="text-2xl sm:text-4xl font-display font-extrabold mb-2">Kantine Planning</h1>
             <p className="text-muted-foreground text-lg">Bekijk de volledige kantine planning.</p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-end gap-3">
             {/* ── Filter dropdown ── */}
             <div className="relative" ref={filterDropdownRef}>
               {(() => {
@@ -521,7 +521,7 @@ export default function Dashboard() {
               })()}
 
               {filterOpen && (
-                <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-72 max-w-[calc(100vw-1rem)] bg-white border-2 border-border rounded-2xl shadow-xl z-20 overflow-hidden">
+                <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-1rem)] bg-white border-2 border-border rounded-2xl shadow-xl z-20 overflow-hidden">
                   <div className="p-4 space-y-5">
 
                     {/* Weergave */}
@@ -606,7 +606,7 @@ export default function Dashboard() {
               </button>
 
               {printOpen && (
-                <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-72 max-w-[calc(100vw-1rem)] bg-white border-2 border-border rounded-2xl shadow-xl z-20">
+                <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-1rem)] bg-white border-2 border-border rounded-2xl shadow-xl z-20">
                   <div className="p-4 space-y-4">
 
                     {seasons && seasons.length > 0 && (

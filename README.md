@@ -39,7 +39,7 @@ Een webapplicatie voor het beheren van kantinediensten bij voetbalclub v.v. KCVO
 
 - Seizoenen aanmaken met start- en einddatum
 - Automatisch diensten genereren voor een heel seizoen op basis van de beschikbare dagdelen
-- Seizoensrooster importeren via Excel
+- **Publicatiebeheer** — nieuw aangemaakt seizoen staat standaard op *Concept*; de beheerder publiceert het expliciet zodat vrijwilligers het kunnen zien. Zo kunnen wijzigingen worden doorgevoerd vóór publicatie.
 
 ### Dagdelen
 
@@ -48,18 +48,22 @@ Een webapplicatie voor het beheren van kantinediensten bij voetbalclub v.v. KCVO
 
 ### Planning (dashboard)
 
-- Volledig roosteroverzicht per week en seizoen
+- Volledig roosteroverzicht per week of alle weken tegelijk
 - Diensten handmatig aanmaken, bewerken en verwijderen
 - Vrijwilligers handmatig aan diensten koppelen
 - **Automatische indeling** — round-robin algoritme deelt vrijwilligers eerlijk in op basis van beschikbaarheid en groepslidmaatschap
-- Rooster afdrukken (geoptimaliseerde printweergave)
+- **Filters** — één dropdownknop met alle filteropties: weergave (week/alles), alleen eigen diensten, en dagdeel
+- **Afdrukken** — inline dropdownknop om het rooster af te drukken; filterbaar op seizoen, dagdeel en vrijwilliger; seizoensnaam verschijnt automatisch in de afdruk-header; consistente kolombreedtes over alle weektabellen
 
 ---
 
 ## Functies voor Vrijwilligers
 
 - Eigen rooster bekijken op het dashboard
-- **iCal exporteren** — diensten importeren in Google Agenda, Outlook of Apple Agenda
+- **Filter op eigen diensten** — één klik toont alleen de eigen ingeplande diensten
+- **iCal exporteren** — diensten eenmalig downloaden als .ics-bestand en importeren in Google Agenda, Outlook of Apple Agenda
+- **iCal-abonnement** — live agenda-URL die automatisch gesynchroniseerd blijft (vernieuwd elke uur); kopieer de URL of open direct met de webcal-link
+- **Dienst aanbieden** — toekomstige eigen dienst aanbieden aan andere vrijwilligers; beschikbare diensten zijn zichtbaar op het dashboard
 - **Instellingen** — naam, e-mailadres en wachtwoord wijzigen
 
 ---
@@ -78,8 +82,9 @@ Vrijwilligers kunnen worden gekoppeld in een groep (max. 5 personen). Groepslede
 | Database | Supabase (PostgreSQL met Row Level Security) |
 | Authenticatie | Supabase Auth (e-mail + wachtwoord) |
 | Uitnodigingsmails | Supabase Edge Function + SMTP |
-| Agenda-export | iCal-formaat (.ics) |
-| Excel-import | .xlsx via XLSX bibliotheek |
+| Agenda-export | iCal-formaat (.ics) — download of live abonnement |
+| iCal-abonnement | Supabase Edge Function (`supabase/functions/ical/`) |
+| Excel-import | .xlsx via XLSX bibliotheek (vrijwilligers bulkimport) |
 | Zoekmachines | Geblokkeerd via `robots.txt` + `noindex` |
 
 ---
@@ -113,9 +118,11 @@ BASE_PATH=/
 ## Supabase Setup
 
 1. Voer `supabase/migrations/001_schema.sql` uit om alle tabellen met RLS aan te maken
-2. Voer `supabase/seed.sql` uit voor de standaard dagdelen
-3. Maak een auth-gebruiker aan via het Supabase dashboard en koppel deze:
+2. Voer `supabase/migrations/003_season_published.sql` uit voor de publicatiestatus van seizoenen
+3. Voer `supabase/seed.sql` uit voor de standaard dagdelen
+4. Maak een auth-gebruiker aan via het Supabase dashboard en koppel deze:
    ```sql
    UPDATE volunteers SET auth_id = '<uuid>' WHERE email = 'gebruiker@voorbeeld.nl';
    ```
-4. Zet `is_admin = true` voor beheerderstoegang
+5. Zet `is_admin = true` voor beheerderstoegang
+6. Deploy de iCal Edge Function via `supabase functions deploy ical`

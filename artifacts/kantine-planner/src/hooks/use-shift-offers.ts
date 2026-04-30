@@ -25,7 +25,16 @@ async function fetchShiftOffers(): Promise<ShiftOffer[]> {
 
   if (error) throw error;
 
-  return (data ?? []).map((row): ShiftOffer => {
+  const now = new Date();
+
+  return (data ?? [])
+    .filter(row => {
+      // Verlopen open aanbiedingen verbergen (dienst heeft al plaatsgevonden)
+      if (row.status !== 'open') return true;
+      if (!(row as any).expires_at) return true;
+      return new Date((row as any).expires_at) > now;
+    })
+    .map((row): ShiftOffer => {
     const shift = (row.shift as unknown as RawShift);
     const volunteer = (row.volunteer as unknown as RawVolunteer);
     const responses = (row.responses as unknown as Array<{
@@ -75,10 +84,12 @@ export function useListShiftOffers() {
 export function useCreateShiftOffer() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ shiftId, volunteerId }: { shiftId: number; volunteerId: number }) => {
+    mutationFn: async ({ shiftId, volunteerId, shiftDate }: { shiftId: number; volunteerId: number; shiftDate: string }) => {
+      // Verloopt op middernacht (UTC) van de dag van de dienst
+      const expiresAt = new Date(shiftDate).toISOString();
       const { error } = await supabase
         .from('shift_offers')
-        .insert({ shift_id: shiftId, volunteer_id: volunteerId });
+        .insert({ shift_id: shiftId, volunteer_id: volunteerId, expires_at: expiresAt });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),

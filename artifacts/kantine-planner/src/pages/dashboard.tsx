@@ -289,7 +289,7 @@ export default function Dashboard() {
   const handleOffer = (shift: ShiftWithAssignments) => {
     if (!myVolunteerId) return;
     if (window.confirm(`Wil je jouw dienst op ${format(parseISO(shift.date), 'd MMMM', { locale: nl })} aanbieden aan andere vrijwilligers?`)) {
-      createOffer({ shiftId: shift.id, volunteerId: myVolunteerId }, {
+      createOffer({ shiftId: shift.id, volunteerId: myVolunteerId, shiftDate: shift.date }, {
         onSuccess: () => toast({ title: 'Aangeboden', description: 'Jouw dienst is aangeboden aan andere vrijwilligers.' }),
         onError: () => toast({ title: 'Fout', description: 'Kon de dienst niet aanbieden.', variant: 'destructive' }),
       });

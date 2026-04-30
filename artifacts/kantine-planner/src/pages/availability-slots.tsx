@@ -1,4 +1,20 @@
 import React, { useState } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { AppLayout } from '@/components/layout/app-layout';
 import { AuthGuard } from '@/contexts/auth-context';
 import {
@@ -6,6 +22,7 @@ import {
   useCreateAvailabilitySlot,
   useUpdateAvailabilitySlot,
   useDeleteAvailabilitySlot,
+  useReorderAvailabilitySlots,
 } from '@/hooks/use-availability-slots';
 import type { AvailabilitySlot } from '@/lib/types';
 import { useQueryClient } from '@tanstack/react-query';
@@ -27,10 +44,12 @@ function SlotFormModal({
   isOpen,
   onClose,
   editSlot,
+  currentSlotsLength,
 }: {
   isOpen: boolean;
   onClose: () => void;
   editSlot?: AvailabilitySlot | null;
+  currentSlotsLength: number;
 }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -71,7 +90,7 @@ function SlotFormModal({
       });
     } else {
       const key = `${form.day}_${makeLabelSlug(form.label)}`;
-      createSlot({ data: { key, label: form.label, isActive: form.isActive, ...times } }, {
+      createSlot({ data: { key, label: form.label, isActive: form.isActive, ...times, sortOrder: currentSlotsLength } }, {
         onSuccess: () => { invalidate(); toast({ title: 'Aangemaakt', description: 'Nieuw dagdeel toegevoegd.' }); onClose(); },
         onError: (e: any) => toast({ title: 'Fout', description: e.message, variant: 'destructive' }),
       });
@@ -160,9 +179,143 @@ function SlotFormModal({
   );
 }
 
+function ActiveBadge({ slot, onToggle }: { slot: AvailabilitySlot; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      title={slot.isActive ? 'Actief — klik om te deactiveren' : 'Inactief — klik om te activeren'}
+      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-colors ${
+        slot.isActive
+          ? 'bg-green-100 text-green-700 hover:bg-green-200'
+          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+      }`}
+    >
+      {slot.isActive ? <><Check className="w-3 h-3" /> Actief</> : <><X className="w-3 h-3" /> Inactief</>}
+    </button>
+  );
+}
+
+function SlotTime({ slot }: { slot: AvailabilitySlot }) {
+  if (slot.startTime && slot.endTime) return <span className="font-medium text-foreground">{slot.startTime} – {slot.endTime}</span>;
+  if (slot.startTime) return <span className="font-medium text-foreground">vanaf {slot.startTime}</span>;
+  return <span>—</span>;
+}
+
+function SortableRow({
+  slot,
+  onEdit,
+  onDelete,
+  onToggleActive,
+  isDeleting,
+}: {
+  slot: AvailabilitySlot;
+  onEdit: () => void;
+  onDelete: () => void;
+  onToggleActive: () => void;
+  isDeleting: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: slot.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  return (
+    <tr ref={setNodeRef} style={style} className="hover:bg-muted/20 transition-colors group">
+      <td className="p-4 pl-6 text-muted-foreground cursor-grab active:cursor-grabbing" {...attributes} {...listeners}>
+        <GripVertical className="w-4 h-4 opacity-40" />
+      </td>
+      <td className="p-4 font-bold text-foreground">{slot.label}</td>
+      <td className="p-4 text-sm text-muted-foreground">{DAY_LABELS[getDayFromKey(slot.key)] ?? '—'}</td>
+      <td className="p-4 font-mono text-sm text-muted-foreground">{slot.key}</td>
+      <td className="p-4 text-sm text-muted-foreground">
+        <SlotTime slot={slot} />
+      </td>
+      <td className="p-4 text-center">
+        <ActiveBadge slot={slot} onToggle={onToggleActive} />
+      </td>
+      <td className="p-4 pr-6 text-right space-x-2">
+        <button
+          onClick={onEdit}
+          className="p-2 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+          title="Bewerken"
+        >
+          <Edit2 className="w-5 h-5" />
+        </button>
+        <button
+          onClick={onDelete}
+          disabled={isDeleting}
+          className="p-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+          title="Verwijderen"
+        >
+          <Trash2 className="w-5 h-5" />
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+function SortableCard({
+  slot,
+  onEdit,
+  onDelete,
+  onToggleActive,
+  isDeleting,
+}: {
+  slot: AvailabilitySlot;
+  onEdit: () => void;
+  onDelete: () => void;
+  onToggleActive: () => void;
+  isDeleting: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: slot.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  return (
+    <div ref={setNodeRef} style={style} className="p-4 space-y-2">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="cursor-grab active:cursor-grabbing touch-none" {...attributes} {...listeners}>
+            <GripVertical className="w-4 h-4 text-muted-foreground opacity-40 shrink-0" />
+          </span>
+          <span className="font-bold text-foreground">{slot.label}</span>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={onEdit}
+            className="p-2.5 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+          >
+            <Edit2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={onDelete}
+            disabled={isDeleting}
+            className="p-2.5 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-2 pl-6">
+        <div className="flex flex-col gap-0.5 min-w-0">
+          <span className="text-xs text-muted-foreground">{DAY_LABELS[getDayFromKey(slot.key)] ?? '—'}</span>
+          <span className="font-mono text-xs text-muted-foreground">{slot.key}</span>
+          {(slot.startTime || slot.endTime) && (
+            <span className="text-xs font-medium text-foreground">
+              {slot.startTime && slot.endTime
+                ? `${slot.startTime} – ${slot.endTime}`
+                : slot.startTime
+                  ? `vanaf ${slot.startTime}`
+                  : ''}
+            </span>
+          )}
+        </div>
+        <ActiveBadge slot={slot} onToggle={onToggleActive} />
+      </div>
+    </div>
+  );
+}
+
 export default function AvailabilitySlotsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editSlot, setEditSlot] = useState<AvailabilitySlot | null>(null);
+  const [localOrder, setLocalOrder] = useState<AvailabilitySlot[]>([]);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -170,6 +323,28 @@ export default function AvailabilitySlotsPage() {
   const { data: slots, isLoading } = useListAvailabilitySlots();
   const { mutate: deleteSlot, isPending: isDeleting } = useDeleteAvailabilitySlot();
   const { mutate: updateSlot } = useUpdateAvailabilitySlot();
+  const { mutate: reorderSlots } = useReorderAvailabilitySlots();
+
+  React.useEffect(() => {
+    if (slots) setLocalOrder([...slots].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)));
+  }, [slots]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setLocalOrder(prev => {
+      const oldIndex = prev.findIndex(s => s.id === active.id);
+      const newIndex = prev.findIndex(s => s.id === over.id);
+      const next = arrayMove(prev, oldIndex, newIndex);
+      reorderSlots(next.map((s, i) => ({ id: s.id, sortOrder: i })));
+      return next;
+    });
+  };
 
   const handleDelete = (slot: AvailabilitySlot) => {
     if (window.confirm(`Weet je zeker dat je het dagdeel "${slot.label}" wilt verwijderen? Bestaande diensten met dit dagdeel blijven bestaan.`)) {
@@ -190,22 +365,6 @@ export default function AvailabilitySlotsPage() {
     });
   };
 
-  const sorted = (slots ?? []).slice().sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
-
-  const ActiveBadge = ({ slot }: { slot: AvailabilitySlot }) => (
-    <button
-      onClick={() => toggleActive(slot)}
-      title={slot.isActive ? 'Actief — klik om te deactiveren' : 'Inactief — klik om te activeren'}
-      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-colors ${
-        slot.isActive
-          ? 'bg-green-100 text-green-700 hover:bg-green-200'
-          : 'bg-muted text-muted-foreground hover:bg-muted/80'
-      }`}
-    >
-      {slot.isActive ? <><Check className="w-3 h-3" /> Actief</> : <><X className="w-3 h-3" /> Inactief</>}
-    </button>
-  );
-
   return (
     <AuthGuard requireAdmin>
       <AppLayout>
@@ -225,7 +384,7 @@ export default function AvailabilitySlotsPage() {
         <div className="bg-white rounded-2xl border-2 border-border shadow-sm overflow-hidden">
           {isLoading ? (
             <div className="p-12 text-center text-muted-foreground font-bold animate-pulse">Laden...</div>
-          ) : sorted.length === 0 ? (
+          ) : localOrder.length === 0 ? (
             <div className="p-12 text-center text-muted-foreground">Geen dagdelen geconfigureerd.</div>
           ) : (
             <>
@@ -243,94 +402,42 @@ export default function AvailabilitySlotsPage() {
                       <th className="p-4 text-right pr-6">Acties</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
-                    {sorted.map((slot) => (
-                      <tr key={slot.id} className="hover:bg-muted/20 transition-colors group">
-                        <td className="p-4 pl-6 text-muted-foreground">
-                          <GripVertical className="w-4 h-4 opacity-40" />
-                        </td>
-                        <td className="p-4 font-bold text-foreground">{slot.label}</td>
-                        <td className="p-4 text-sm text-muted-foreground">{DAY_LABELS[getDayFromKey(slot.key)] ?? '—'}</td>
-                        <td className="p-4 font-mono text-sm text-muted-foreground">{slot.key}</td>
-                        <td className="p-4 text-sm text-muted-foreground">
-                          {slot.startTime && slot.endTime
-                            ? <span className="font-medium text-foreground">{slot.startTime} – {slot.endTime}</span>
-                            : slot.startTime
-                              ? <span className="font-medium text-foreground">vanaf {slot.startTime}</span>
-                              : <span>—</span>
-                          }
-                        </td>
-                        <td className="p-4 text-center">
-                          <ActiveBadge slot={slot} />
-                        </td>
-                        <td className="p-4 pr-6 text-right space-x-2">
-                          <button
-                            onClick={() => { setEditSlot(slot); setIsModalOpen(true); }}
-                            className="p-2 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                            title="Bewerken"
-                          >
-                            <Edit2 className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(slot)}
-                            disabled={isDeleting}
-                            className="p-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                            title="Verwijderen"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={localOrder.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                      <tbody className="divide-y divide-border">
+                        {localOrder.map(slot => (
+                          <SortableRow
+                            key={slot.id}
+                            slot={slot}
+                            onEdit={() => { setEditSlot(slot); setIsModalOpen(true); }}
+                            onDelete={() => handleDelete(slot)}
+                            onToggleActive={() => toggleActive(slot)}
+                            isDeleting={isDeleting}
+                          />
+                        ))}
+                      </tbody>
+                    </SortableContext>
+                  </DndContext>
                 </table>
               </div>
 
               {/* ── Mobile cards (< md) ── */}
-              <div className="md:hidden divide-y divide-border">
-                {sorted.map((slot) => (
-                  <div key={slot.id} className="p-4 space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <GripVertical className="w-4 h-4 text-muted-foreground opacity-40 shrink-0" />
-                        <span className="font-bold text-foreground">{slot.label}</span>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => { setEditSlot(slot); setIsModalOpen(true); }}
-                          className="p-2.5 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(slot)}
-                          disabled={isDeleting}
-                          className="p-2.5 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-2 pl-6">
-                      <div className="flex flex-col gap-0.5 min-w-0">
-                        <span className="text-xs text-muted-foreground">{DAY_LABELS[getDayFromKey(slot.key)] ?? '—'}</span>
-                        <span className="font-mono text-xs text-muted-foreground">{slot.key}</span>
-                        {(slot.startTime || slot.endTime) && (
-                          <span className="text-xs font-medium text-foreground">
-                            {slot.startTime && slot.endTime
-                              ? `${slot.startTime} – ${slot.endTime}`
-                              : slot.startTime
-                                ? `vanaf ${slot.startTime}`
-                                : ''}
-                          </span>
-                        )}
-                      </div>
-                      <ActiveBadge slot={slot} />
-                    </div>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={localOrder.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                  <div className="md:hidden divide-y divide-border">
+                    {localOrder.map(slot => (
+                      <SortableCard
+                        key={slot.id}
+                        slot={slot}
+                        onEdit={() => { setEditSlot(slot); setIsModalOpen(true); }}
+                        onDelete={() => handleDelete(slot)}
+                        onToggleActive={() => toggleActive(slot)}
+                        isDeleting={isDeleting}
+                      />
+                    ))}
                   </div>
-                ))}
-              </div>
+                </SortableContext>
+              </DndContext>
             </>
           )}
         </div>
@@ -339,6 +446,7 @@ export default function AvailabilitySlotsPage() {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           editSlot={editSlot}
+          currentSlotsLength={slots?.length ?? 0}
         />
       </AppLayout>
     </AuthGuard>

@@ -10,7 +10,7 @@ import { nl } from 'date-fns/locale';
 import {
   ChevronLeft, ChevronRight, ChevronDown, Printer, Calendar as CalendarIcon,
   List as ListIcon, X, AlertCircle, User, Download, ArrowLeftRight,
-  Rss, Copy, Check, SlidersHorizontal,
+  Rss, Copy, Check, SlidersHorizontal, CalendarDays,
 } from 'lucide-react';
 import { ShiftsGrid } from '@/components/shift/shifts-grid';
 import { ShiftFormModal } from '@/components/shift/shift-form-modal';
@@ -165,6 +165,24 @@ export default function Dashboard() {
 
   const [icalStreamOpen, setIcalStreamOpen] = useState(false);
   const [icalCopied, setIcalCopied] = useState(false);
+  const [icalDismissed, setIcalDismissed] = useState(false);
+
+  useEffect(() => {
+    if (myVolunteerId) {
+      setIcalDismissed(localStorage.getItem(`ical-dismissed-${myVolunteerId}`) === 'true');
+    }
+  }, [myVolunteerId]);
+
+  const dismissIcalBanner = () => {
+    if (myVolunteerId) localStorage.setItem(`ical-dismissed-${myVolunteerId}`, 'true');
+    setIcalDismissed(true);
+    setIcalStreamOpen(false);
+  };
+
+  const restoreIcalBanner = () => {
+    if (myVolunteerId) localStorage.removeItem(`ical-dismissed-${myVolunteerId}`);
+    setIcalDismissed(false);
+  };
 
   const [isOfferResponseOpen, setIsOfferResponseOpen] = useState(false);
   const [respondOffer, setRespondOffer] = useState<ShiftOffer | null>(null);
@@ -314,6 +332,7 @@ export default function Dashboard() {
     try {
       const content = await generateIcal(myVolunteerId);
       downloadIcal(content, 'mijn-diensten.ics');
+      dismissIcalBanner();
     } catch {
       toast({ title: 'Fout', description: 'Agenda kon niet worden gedownload.', variant: 'destructive' });
     }
@@ -329,7 +348,10 @@ export default function Dashboard() {
     if (!icalStreamHttpUrl) return;
     await navigator.clipboard.writeText(icalStreamHttpUrl);
     setIcalCopied(true);
-    setTimeout(() => setIcalCopied(false), 2000);
+    setTimeout(() => {
+      setIcalCopied(false);
+      dismissIcalBanner();
+    }, 2000);
   };
 
   const { slots, getLabel: getSlotLabel } = useSlots();
@@ -350,7 +372,7 @@ export default function Dashboard() {
     <AuthGuard>
       <AppLayout>
         {/* ── Volunteer welcome banner ── */}
-        {myVolunteerId && (
+        {myVolunteerId && !icalDismissed && (
           <div className="bg-primary/10 border-2 border-primary/20 rounded-2xl mb-6 no-print overflow-hidden">
             <div className="flex items-center gap-4 px-5 py-4">
               <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
@@ -378,6 +400,13 @@ export default function Dashboard() {
                 >
                   <Download className="w-4 h-4" />
                   <span className="hidden sm:inline">Downloaden</span>
+                </button>
+                <button
+                  onClick={dismissIcalBanner}
+                  className="p-2 rounded-lg text-primary/60 hover:text-primary hover:bg-primary/10 transition-colors"
+                  title="Verberg"
+                >
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -494,6 +523,16 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center justify-end gap-3">
+            {myVolunteerId && icalDismissed && (
+              <button
+                onClick={restoreIcalBanner}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-sm font-semibold transition-colors"
+                title="Agenda exporteren"
+              >
+                <CalendarDays className="w-4 h-4" />
+                <span className="hidden sm:inline">Agenda</span>
+              </button>
+            )}
             {/* ── Filter dropdown ── */}
             <div className="relative" ref={filterDropdownRef}>
               {(() => {

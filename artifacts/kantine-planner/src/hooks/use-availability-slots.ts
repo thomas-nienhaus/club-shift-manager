@@ -30,11 +30,11 @@ export function useListAvailabilitySlots() {
 export function useCreateAvailabilitySlot() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { data: { key: string; label: string; isActive: boolean; startTime?: string | null; endTime?: string | null } }) => {
+    mutationFn: async (payload: { data: { key: string; label: string; isActive: boolean; startTime?: string | null; endTime?: string | null; sortOrder?: number } }) => {
       const d = payload.data;
       const { data, error } = await supabase
         .from('availability_slots')
-        .insert({ key: d.key, label: d.label, is_active: d.isActive, start_time: d.startTime ?? null, end_time: d.endTime ?? null })
+        .insert({ key: d.key, label: d.label, is_active: d.isActive, start_time: d.startTime ?? null, end_time: d.endTime ?? null, sort_order: d.sortOrder ?? 0 })
         .select()
         .single();
       if (error) throw error;
@@ -74,6 +74,20 @@ export function useDeleteAvailabilitySlot() {
     mutationFn: async (payload: { id: number }) => {
       const { error } = await supabase.from('availability_slots').delete().eq('id', payload.id);
       if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+  });
+}
+
+export function useReorderAvailabilitySlots() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (items: { id: number; sortOrder: number }[]) => {
+      await Promise.all(
+        items.map(({ id, sortOrder }) =>
+          supabase.from('availability_slots').update({ sort_order: sortOrder }).eq('id', id)
+        )
+      );
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   });

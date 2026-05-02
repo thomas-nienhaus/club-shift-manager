@@ -49,6 +49,16 @@ export async function generateSeasonShifts(seasonId: number): Promise<{ shiftsCr
     current = addDays(current, 1);
   }
 
+  // Voeg extra dagdelen toe op thuiswedstrijddatums
+  const { data: homeGameDates } = await supabase
+    .from('home_game_dates')
+    .select('date, extra_slot')
+    .eq('season_id', seasonId);
+
+  for (const hgd of homeGameDates ?? []) {
+    shifts.push({ season_id: seasonId, date: hgd.date, slot: hgd.extra_slot });
+  }
+
   if (shifts.length === 0) {
     return { shiftsCreated: 0, message: 'Geen actieve dagdelen gevonden voor dit seizoen.' };
   }

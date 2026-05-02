@@ -9,6 +9,7 @@ import { ShiftFormModal } from '@/components/shift/shift-form-modal';
 import { AssignModal } from '@/components/shift/assign-modal';
 import { ShiftsGrid } from '@/components/shift/shifts-grid';
 import { useListShifts } from '@/hooks/use-shifts';
+import { useListSeasons } from '@/hooks/use-seasons';
 import type { ShiftWithAssignments } from '@/lib/types';
 import {
   Shuffle, Plus, Calendar, Users, Clock,
@@ -34,6 +35,7 @@ export default function Beheer() {
   const [assignShift, setAssignShift] = useState<ShiftWithAssignments | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [filterMode, setFilterMode] = useState<FilterMode>('week');
+  const [seasonFilter, setSeasonFilter] = useState<number | null>(null);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -42,11 +44,14 @@ export default function Beheer() {
     : {};
 
   const { data: shifts, isLoading } = useListShifts(screenParams);
+  const { data: seasons } = useListSeasons();
 
   const groupedShifts = useMemo(() => {
     if (!shifts) return {};
-    return groupByDate(shifts);
-  }, [shifts]);
+    let filtered = shifts;
+    if (seasonFilter) filtered = filtered.filter(s => s.seasonId === seasonFilter);
+    return groupByDate(filtered);
+  }, [shifts, seasonFilter]);
 
   const handleOpenEdit = (shift: ShiftWithAssignments) => { setEditShift(shift); setIsShiftModalOpen(true); };
   const handleOpenCreate = () => { setEditShift(null); setIsShiftModalOpen(true); };
@@ -108,6 +113,18 @@ export default function Beheer() {
                     <ListIcon className="w-4 h-4" /> Alle
                   </button>
                 </div>
+                {seasons && seasons.length > 1 && (
+                  <select
+                    value={seasonFilter ?? ''}
+                    onChange={e => setSeasonFilter(e.target.value ? Number(e.target.value) : null)}
+                    className="px-3 py-2 rounded-xl font-bold text-sm border-2 border-border bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  >
+                    <option value="">Alle seizoenen</option>
+                    {seasons.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                )}
                 <button
                   onClick={() => setIsAutoScheduleOpen(true)}
                   className="btn-secondary flex items-center gap-2 border-primary/30 text-primary hover:bg-primary/10"
@@ -156,6 +173,7 @@ export default function Beheer() {
         <AutoScheduleModal
           isOpen={isAutoScheduleOpen}
           onClose={() => setIsAutoScheduleOpen(false)}
+          initialSeasonId={seasonFilter}
         />
         <ShiftFormModal
           isOpen={isShiftModalOpen}

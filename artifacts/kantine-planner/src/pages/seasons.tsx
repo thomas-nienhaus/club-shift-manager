@@ -14,31 +14,55 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { useSlots } from '@/hooks/use-slots';
 import { useListAvailabilitySlots } from '@/hooks/use-availability-slots';
 import { generateSeasonShifts } from '@/utils/season-generator';
-import { useListHomeGameDates, useCreateHomeGameDate, useDeleteHomeGameDate } from '@/hooks/use-home-game-dates';
+import { useListHomeGameDates, useCreateHomeGameDates, useDeleteHomeGameDate } from '@/hooks/use-home-game-dates';
 import { cn } from '@/lib/utils';
+
+type WizardStep = 'idle' | 'step1' | 'step2';
 
 function HomeGameSection({ season }: { season: Season }) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
-  const [newDate, setNewDate] = useState('');
-  const [newSlot, setNewSlot] = useState('');
+  const [wizardStep, setWizardStep] = useState<WizardStep>('idle');
+  const [count, setCount] = useState('');
+  const [wizardSlot, setWizardSlot] = useState('');
+  const [dates, setDates] = useState<string[]>([]);
 
   const { data: homeGameDates } = useListHomeGameDates(season.id);
-  const { mutate: createDate, isPending: isCreating } = useCreateHomeGameDate();
+  const { mutate: createDates, isPending: isCreating } = useCreateHomeGameDates();
   const { mutate: deleteDate, isPending: isDeleting } = useDeleteHomeGameDate();
   const { data: allSlots } = useListAvailabilitySlots();
   const activeSlots = (allSlots ?? []).filter(s => s.isActive);
 
-  const handleAdd = () => {
-    if (!newDate || !newSlot) return;
-    createDate({ seasonId: season.id, date: newDate, extraSlot: newSlot }, {
-      onSuccess: () => toast({ title: 'Toegevoegd', description: `${format(parseISO(newDate), 'd MMM yyyy', { locale: nl })} als thuiswedstrijd ingepland.` }),
-      onError: (e: any) => toast({ title: 'Fout', description: e.message, variant: 'destructive' }),
-    });
-    setNewDate('');
+  const totalCount = homeGameDates?.length ?? 0;
+
+  const handleStep1Next = () => {
+    const n = parseInt(count);
+    if (!n || n < 1 || !wizardSlot) return;
+    setDates(Array(n).fill(''));
+    setWizardStep('step2');
   };
 
-  const count = homeGameDates?.length ?? 0;
+  const handleSave = () => {
+    const validDates = dates.filter(d => d !== '');
+    if (validDates.length === 0) return;
+    createDates({ seasonId: season.id, dates: validDates, extraSlot: wizardSlot }, {
+      onSuccess: () => {
+        toast({ title: 'Opgeslagen', description: `${validDates.length} thuiswedstrijden toegevoegd.` });
+        setWizardStep('idle');
+        setCount('');
+        setWizardSlot('');
+        setDates([]);
+      },
+      onError: (e: any) => toast({ title: 'Fout', description: e.message, variant: 'destructive' }),
+    });
+  };
+
+  const handleCancel = () => {
+    setWizardStep('idle');
+    setCount('');
+    setWizardSlot('');
+    setDates([]);
+  };
 
   return (
     <div className="border-t border-border mt-4 pt-4">
@@ -46,7 +70,7 @@ function HomeGameSection({ season }: { season: Season }) {
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between text-sm font-bold text-foreground hover:text-primary transition-colors"
       >
-        <span>Thuiswedstrijddatums {count > 0 && <span className="ml-1.5 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">{count}</span>}</span>
+        <span>Thuiswedstrijddatums {totalCount > 0 && <span className="ml-1.5 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">{totalCount}</span>}</span>
         <ChevronDown className={cn('w-4 h-4 text-muted-foreground transition-transform', open && 'rotate-180')} />
       </button>
 
@@ -70,33 +94,84 @@ function HomeGameSection({ season }: { season: Season }) {
             </div>
           ))}
 
-          <div className="flex flex-col sm:flex-row gap-2 pt-1">
-            <input
-              type="date"
-              value={newDate}
-              min={season.startDate}
-              max={season.endDate}
-              onChange={e => setNewDate(e.target.value)}
-              className="input-field text-sm py-2 flex-1"
-            />
-            <select
-              value={newSlot}
-              onChange={e => setNewSlot(e.target.value)}
-              className="input-field text-sm py-2 flex-1"
-            >
-              <option value="">Kies dagdeel...</option>
-              {activeSlots.map(s => (
-                <option key={s.key} value={s.key}>{s.label}</option>
-              ))}
-            </select>
+          {wizardStep === 'idle' && (
             <button
-              onClick={handleAdd}
-              disabled={!newDate || !newSlot || isCreating}
-              className="btn-primary text-sm py-2 px-4 shrink-0"
+              onClick={() => setWizardStep('step1')}
+              className="w-full text-sm font-bold text-primary border-2 border-dashed border-primary/30 rounded-xl py-2 hover:bg-primary/5 transition-colors mt-1"
             >
-              {isCreating ? 'Bezig...' : '+ Toevoegen'}
+              + Thuiswedstrijden toevoegen
             </button>
-          </div>
+          )}
+
+          {wizardStep === 'step1' && (
+            <div className="bg-muted/30 rounded-xl p-3 space-y-3 border border-border mt-1">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Stap 1 — Aantal en dagdeel</p>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  value={count}
+                  onChange={e => setCount(e.target.value)}
+                  placeholder="Aantal wedstrijden"
+                  className="input-field text-sm py-2 flex-1"
+                  autoFocus
+                />
+                <select
+                  value={wizardSlot}
+                  onChange={e => setWizardSlot(e.target.value)}
+                  className="input-field text-sm py-2 flex-1"
+                >
+                  <option value="">Kies dagdeel...</option>
+                  {activeSlots.map(s => (
+                    <option key={s.key} value={s.key}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={handleCancel} className="btn-secondary text-sm py-2 flex-1">Annuleren</button>
+                <button
+                  onClick={handleStep1Next}
+                  disabled={!count || parseInt(count) < 1 || !wizardSlot}
+                  className="btn-primary text-sm py-2 flex-1"
+                >
+                  Volgende →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {wizardStep === 'step2' && (
+            <div className="bg-muted/30 rounded-xl p-3 space-y-3 border border-border mt-1">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Stap 2 — Vul de datums in</p>
+              <div className="grid grid-cols-2 gap-2">
+                {dates.map((d, i) => (
+                  <input
+                    key={i}
+                    type="date"
+                    value={d}
+                    min={season.startDate}
+                    max={season.endDate}
+                    onChange={e => {
+                      const next = [...dates];
+                      next[i] = e.target.value;
+                      setDates(next);
+                    }}
+                    className="input-field text-sm py-1.5"
+                  />
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setWizardStep('step1')} className="btn-secondary text-sm py-2 flex-1">← Terug</button>
+                <button
+                  onClick={handleSave}
+                  disabled={isCreating || dates.every(d => !d)}
+                  className="btn-primary text-sm py-2 flex-1"
+                >
+                  {isCreating ? 'Bezig...' : `Opslaan (${dates.filter(d => d).length})`}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

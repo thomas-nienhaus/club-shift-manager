@@ -46,6 +46,23 @@ export function useCreateHomeGameDate() {
   });
 }
 
+export function useCreateHomeGameDates() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ seasonId, dates, extraSlot }: { seasonId: number; dates: string[]; extraSlot: string }) => {
+      const rows = dates.map(date => ({ season_id: seasonId, date, extra_slot: extraSlot }));
+      const { error } = await supabase.from('home_game_dates').insert(rows);
+      if (error) throw error;
+      const shiftRows = dates.map(date => ({ season_id: seasonId, date, slot: extraSlot }));
+      await supabase.from('shifts').upsert(shiftRows, { onConflict: 'season_id,date,slot' });
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: key(vars.seasonId) });
+      qc.invalidateQueries({ queryKey: ['shifts'] });
+    },
+  });
+}
+
 export function useDeleteHomeGameDate() {
   const qc = useQueryClient();
   return useMutation({

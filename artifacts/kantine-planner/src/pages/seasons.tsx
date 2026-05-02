@@ -25,6 +25,7 @@ function HomeGameSection({ season }: { season: Season }) {
   const [wizardStep, setWizardStep] = useState<WizardStep>('idle');
   const [count, setCount] = useState('');
   const [wizardSlot, setWizardSlot] = useState('');
+  const [overrideSlot, setOverrideSlot] = useState(false);
   const [dates, setDates] = useState<string[]>([]);
 
   const { data: homeGameDates } = useListHomeGameDates(season.id);
@@ -36,11 +37,11 @@ function HomeGameSection({ season }: { season: Season }) {
 
   const totalCount = homeGameDates?.length ?? 0;
 
+  const effectiveSlot = overrideSlot ? wizardSlot : (homeGameSlot?.key ?? wizardSlot);
+
   const handleStep1Next = () => {
     const n = parseInt(count);
-    const slot = wizardSlot || homeGameSlot?.key || '';
-    if (!n || n < 1 || !slot) return;
-    if (!wizardSlot && homeGameSlot) setWizardSlot(homeGameSlot.key);
+    if (!n || n < 1 || !effectiveSlot) return;
     setDates(Array(n).fill(''));
     setWizardStep('step2');
   };
@@ -48,7 +49,7 @@ function HomeGameSection({ season }: { season: Season }) {
   const handleSave = () => {
     const validDates = dates.filter(d => d !== '');
     if (validDates.length === 0) return;
-    createDates({ seasonId: season.id, dates: validDates, extraSlot: wizardSlot }, {
+    createDates({ seasonId: season.id, dates: validDates, extraSlot: effectiveSlot }, {
       onSuccess: () => {
         toast({ title: 'Opgeslagen', description: `${validDates.length} thuiswedstrijden toegevoegd.` });
         setWizardStep('idle');
@@ -64,6 +65,7 @@ function HomeGameSection({ season }: { season: Season }) {
     setWizardStep('idle');
     setCount('');
     setWizardSlot('');
+    setOverrideSlot(false);
     setDates([]);
   };
 
@@ -118,34 +120,43 @@ function HomeGameSection({ season }: { season: Season }) {
                 className="input-field text-sm py-2 w-full"
                 autoFocus
               />
-              {homeGameSlot ? (
+              {homeGameSlot && !overrideSlot ? (
                 <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-xl text-sm">
                   <span className="text-blue-700 font-bold flex-1">Extra dagdeel: {homeGameSlot.label}</span>
                   <button
-                    onClick={() => setWizardSlot(wizardSlot ? '' : homeGameSlot.key)}
+                    onClick={() => { setOverrideSlot(true); setWizardSlot(homeGameSlot.key); }}
                     className="text-xs text-blue-500 hover:text-blue-700 underline shrink-0"
                   >
-                    {wizardSlot === homeGameSlot.key || !wizardSlot ? 'Wijzigen' : 'Herstellen'}
+                    Wijzigen
                   </button>
                 </div>
-              ) : null}
-              {(!homeGameSlot || (wizardSlot !== homeGameSlot?.key && wizardSlot !== '')) && (
-                <select
-                  value={wizardSlot}
-                  onChange={e => setWizardSlot(e.target.value)}
-                  className="input-field text-sm py-2 w-full"
-                >
-                  <option value="">Kies dagdeel...</option>
-                  {activeSlots.map(s => (
-                    <option key={s.key} value={s.key}>{s.label}</option>
-                  ))}
-                </select>
+              ) : (
+                <div className="space-y-1">
+                  <select
+                    value={wizardSlot}
+                    onChange={e => setWizardSlot(e.target.value)}
+                    className="input-field text-sm py-2 w-full"
+                  >
+                    <option value="">Kies dagdeel...</option>
+                    {activeSlots.map(s => (
+                      <option key={s.key} value={s.key}>{s.label}</option>
+                    ))}
+                  </select>
+                  {homeGameSlot && overrideSlot && (
+                    <button
+                      onClick={() => { setOverrideSlot(false); setWizardSlot(''); }}
+                      className="text-xs text-muted-foreground hover:text-foreground underline"
+                    >
+                      ← Herstellen naar {homeGameSlot.label}
+                    </button>
+                  )}
+                </div>
               )}
               <div className="flex gap-2">
                 <button onClick={handleCancel} className="btn-secondary text-sm py-2 flex-1">Annuleren</button>
                 <button
                   onClick={handleStep1Next}
-                  disabled={!count || parseInt(count) < 1 || !(wizardSlot || homeGameSlot)}
+                  disabled={!count || parseInt(count) < 1 || !effectiveSlot}
                   className="btn-primary text-sm py-2 flex-1"
                 >
                   Volgende →

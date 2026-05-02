@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Shuffle, X, AlertCircle } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useListSeasons } from '@/hooks/use-seasons';
 import { runAutoSchedule } from '@/utils/auto-schedule';
 
-export function AutoScheduleModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const [selectedSeasonId, setSelectedSeasonId] = useState<number | null>(null);
+export function AutoScheduleModal({ isOpen, onClose, initialSeasonId = null }: { isOpen: boolean; onClose: () => void; initialSeasonId?: number | null }) {
+  const [selectedSeasonId, setSelectedSeasonId] = useState<number | null>(initialSeasonId);
+
+  useEffect(() => {
+    if (isOpen) setSelectedSeasonId(initialSeasonId);
+  }, [isOpen, initialSeasonId]);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: seasons } = useListSeasons();

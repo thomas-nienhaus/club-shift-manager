@@ -28,7 +28,7 @@ async function fetchSeasons(): Promise<Season[]> {
     name: s.name,
     startDate: s.start_date,
     endDate: s.end_date,
-    isPublished: s.is_published ?? true,
+    isPublished: s.is_published ?? false,
     createdAt: s.created_at,
     shiftCount: countMap.get(s.id) ?? 0,
   }));
@@ -49,7 +49,7 @@ export function useCreateSeason() {
         .select()
         .single();
       if (error) throw error;
-      return { id: data.id, name: data.name, startDate: data.start_date, endDate: data.end_date, isPublished: (data as any).is_published ?? true, createdAt: data.created_at, shiftCount: 0 };
+      return { id: data.id, name: data.name, startDate: data.start_date, endDate: data.end_date, isPublished: (data as any).is_published ?? false, createdAt: data.created_at, shiftCount: 0 };
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   });

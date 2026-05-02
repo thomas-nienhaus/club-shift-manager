@@ -84,7 +84,9 @@ export function useSetHomeGameSlot() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (slotId: number | null) => {
-      await supabase.from('availability_slots').update({ is_home_game_slot: false }).neq('id', 0);
+      // neq('id', 0) updates all rows — Supabase requires a filter clause
+      const { error: resetError } = await supabase.from('availability_slots').update({ is_home_game_slot: false }).neq('id', 0);
+      if (resetError) throw resetError;
       if (slotId !== null) {
         const { error } = await supabase.from('availability_slots').update({ is_home_game_slot: true }).eq('id', slotId);
         if (error) throw error;

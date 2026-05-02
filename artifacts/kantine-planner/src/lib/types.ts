@@ -95,3 +95,11 @@ export type ShiftOffer = {
   volunteer: { name: string };
   responses: ShiftOfferResponse[];
 };
+
+export interface HomeGameDate {
+  id: number;
+  seasonId: number;
+  date: string;
+  extraSlot: string;
+  createdAt: string;
+}

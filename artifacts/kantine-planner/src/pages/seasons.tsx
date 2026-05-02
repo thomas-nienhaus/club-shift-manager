@@ -3,7 +3,7 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { AuthGuard } from '@/contexts/auth-context';
 import { useListSeasons, useCreateSeason, useDeleteSeason, usePublishSeason } from '@/hooks/use-seasons';
 import type { Season } from '@/lib/types';
-import { Plus, Trash2, Calendar as CalendarIcon, Eye, Wand2, Info, Globe, EyeOff } from 'lucide-react';
+import { Plus, Trash2, Calendar as CalendarIcon, Eye, Wand2, Info, Globe, EyeOff, ChevronDown, X } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { format, parseISO } from 'date-fns';
@@ -12,7 +12,96 @@ import { Link } from 'wouter';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useSlots } from '@/hooks/use-slots';
+import { useListAvailabilitySlots } from '@/hooks/use-availability-slots';
 import { generateSeasonShifts } from '@/utils/season-generator';
+import { useListHomeGameDates, useCreateHomeGameDate, useDeleteHomeGameDate } from '@/hooks/use-home-game-dates';
+import { cn } from '@/lib/utils';
+
+function HomeGameSection({ season }: { season: Season }) {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [newDate, setNewDate] = useState('');
+  const [newSlot, setNewSlot] = useState('');
+
+  const { data: homeGameDates } = useListHomeGameDates(season.id);
+  const { mutate: createDate, isPending: isCreating } = useCreateHomeGameDate();
+  const { mutate: deleteDate, isPending: isDeleting } = useDeleteHomeGameDate();
+  const { data: allSlots } = useListAvailabilitySlots();
+  const activeSlots = (allSlots ?? []).filter(s => s.isActive);
+
+  const handleAdd = () => {
+    if (!newDate || !newSlot) return;
+    createDate({ seasonId: season.id, date: newDate, extraSlot: newSlot }, {
+      onSuccess: () => toast({ title: 'Toegevoegd', description: `${format(parseISO(newDate), 'd MMM yyyy', { locale: nl })} als thuiswedstrijd ingepland.` }),
+      onError: (e: any) => toast({ title: 'Fout', description: e.message, variant: 'destructive' }),
+    });
+    setNewDate('');
+  };
+
+  const count = homeGameDates?.length ?? 0;
+
+  return (
+    <div className="border-t border-border mt-4 pt-4">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between text-sm font-bold text-foreground hover:text-primary transition-colors"
+      >
+        <span>Thuiswedstrijddatums {count > 0 && <span className="ml-1.5 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">{count}</span>}</span>
+        <ChevronDown className={cn('w-4 h-4 text-muted-foreground transition-transform', open && 'rotate-180')} />
+      </button>
+
+      {open && (
+        <div className="mt-3 space-y-2">
+          {(homeGameDates ?? []).map(hgd => (
+            <div key={hgd.id} className="flex items-center justify-between gap-2 bg-muted/40 rounded-xl px-3 py-2 text-sm">
+              <span className="font-semibold">{format(parseISO(hgd.date), 'd MMM yyyy', { locale: nl })}</span>
+              <span className="text-muted-foreground flex-1 truncate text-right mr-2">
+                {activeSlots.find(s => s.key === hgd.extraSlot)?.label ?? hgd.extraSlot}
+              </span>
+              <button
+                onClick={() => deleteDate({ id: hgd.id, seasonId: season.id, date: hgd.date, extraSlot: hgd.extraSlot }, {
+                  onError: (e: any) => toast({ title: 'Fout', description: e.message, variant: 'destructive' }),
+                })}
+                disabled={isDeleting}
+                className="p-1 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors shrink-0"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+
+          <div className="flex flex-col sm:flex-row gap-2 pt-1">
+            <input
+              type="date"
+              value={newDate}
+              min={season.startDate}
+              max={season.endDate}
+              onChange={e => setNewDate(e.target.value)}
+              className="input-field text-sm py-2 flex-1"
+            />
+            <select
+              value={newSlot}
+              onChange={e => setNewSlot(e.target.value)}
+              className="input-field text-sm py-2 flex-1"
+            >
+              <option value="">Kies dagdeel...</option>
+              {activeSlots.map(s => (
+                <option key={s.key} value={s.key}>{s.label}</option>
+              ))}
+            </select>
+            <button
+              onClick={handleAdd}
+              disabled={!newDate || !newSlot || isCreating}
+              className="btn-primary text-sm py-2 px-4 shrink-0"
+            >
+              {isCreating ? 'Bezig...' : '+ Toevoegen'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Seasons() {
   const queryClient = useQueryClient();
@@ -134,6 +223,8 @@ export default function Seasons() {
                     </button>
                   </div>
                 </div>
+
+                <HomeGameSection season={season} />
               </div>
             ))}
           </div>

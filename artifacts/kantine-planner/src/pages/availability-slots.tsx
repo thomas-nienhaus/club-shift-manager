@@ -23,11 +23,12 @@ import {
   useUpdateAvailabilitySlot,
   useDeleteAvailabilitySlot,
   useReorderAvailabilitySlots,
+  useSetHomeGameSlot,
 } from '@/hooks/use-availability-slots';
 import type { AvailabilitySlot } from '@/lib/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Edit2, GripVertical, Check, X } from 'lucide-react';
+import { Plus, Trash2, Edit2, GripVertical, Check, X, Home } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 
 import { DAYS, DAY_LABELS, getDayFromKey, makeLabelSlug } from '@/utils/slot-utils';
@@ -179,6 +180,23 @@ function SlotFormModal({
   );
 }
 
+function HomeGameBadge({ slot, onToggle }: { slot: AvailabilitySlot; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      title={slot.isHomeGameSlot ? 'Thuiswedstrijd dagdeel — klik om te verwijderen' : 'Instellen als extra dagdeel bij thuiswedstrijden'}
+      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-colors ${
+        slot.isHomeGameSlot
+          ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+      }`}
+    >
+      <Home className="w-3 h-3" />
+      {slot.isHomeGameSlot ? 'Thuiswedstrijd' : '—'}
+    </button>
+  );
+}
+
 function ActiveBadge({ slot, onToggle }: { slot: AvailabilitySlot; onToggle: () => void }) {
   return (
     <button
@@ -206,12 +224,14 @@ function SortableRow({
   onEdit,
   onDelete,
   onToggleActive,
+  onToggleHomeGame,
   isDeleting,
 }: {
   slot: AvailabilitySlot;
   onEdit: () => void;
   onDelete: () => void;
   onToggleActive: () => void;
+  onToggleHomeGame: () => void;
   isDeleting: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: slot.id });
@@ -229,6 +249,9 @@ function SortableRow({
       </td>
       <td className="p-4 text-center">
         <ActiveBadge slot={slot} onToggle={onToggleActive} />
+      </td>
+      <td className="p-4 text-center">
+        <HomeGameBadge slot={slot} onToggle={onToggleHomeGame} />
       </td>
       <td className="p-4 pr-6 text-right space-x-2">
         <button
@@ -256,12 +279,14 @@ function SortableCard({
   onEdit,
   onDelete,
   onToggleActive,
+  onToggleHomeGame,
   isDeleting,
 }: {
   slot: AvailabilitySlot;
   onEdit: () => void;
   onDelete: () => void;
   onToggleActive: () => void;
+  onToggleHomeGame: () => void;
   isDeleting: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: slot.id });
@@ -306,7 +331,10 @@ function SortableCard({
             </span>
           )}
         </div>
-        <ActiveBadge slot={slot} onToggle={onToggleActive} />
+        <div className="flex items-center gap-2">
+          <HomeGameBadge slot={slot} onToggle={onToggleHomeGame} />
+          <ActiveBadge slot={slot} onToggle={onToggleActive} />
+        </div>
       </div>
     </div>
   );
@@ -324,6 +352,7 @@ export default function AvailabilitySlotsPage() {
   const { mutate: deleteSlot, isPending: isDeleting } = useDeleteAvailabilitySlot();
   const { mutate: updateSlot } = useUpdateAvailabilitySlot();
   const { mutate: reorderSlots } = useReorderAvailabilitySlots();
+  const { mutate: setHomeGameSlot } = useSetHomeGameSlot();
 
   React.useEffect(() => {
     if (slots) setLocalOrder([...slots].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)));
@@ -365,6 +394,19 @@ export default function AvailabilitySlotsPage() {
     });
   };
 
+  const toggleHomeGame = (slot: AvailabilitySlot) => {
+    const nextId = slot.isHomeGameSlot ? null : slot.id;
+    setHomeGameSlot(nextId, {
+      onSuccess: () => toast({
+        title: nextId ? 'Ingesteld' : 'Verwijderd',
+        description: nextId
+          ? `"${slot.label}" is het extra dagdeel bij thuiswedstrijden.`
+          : `Thuiswedstrijd dagdeel verwijderd.`,
+      }),
+      onError: (e: any) => toast({ title: 'Fout', description: e.message, variant: 'destructive' }),
+    });
+  };
+
   return (
     <AuthGuard requireAdmin>
       <AppLayout>
@@ -399,6 +441,7 @@ export default function AvailabilitySlotsPage() {
                       <th className="p-4">Sleutel</th>
                       <th className="p-4">Tijd</th>
                       <th className="p-4 text-center">Actief</th>
+                      <th className="p-4 text-center">Thuiswedstrijd</th>
                       <th className="p-4 text-right pr-6">Acties</th>
                     </tr>
                   </thead>
@@ -412,6 +455,7 @@ export default function AvailabilitySlotsPage() {
                             onEdit={() => { setEditSlot(slot); setIsModalOpen(true); }}
                             onDelete={() => handleDelete(slot)}
                             onToggleActive={() => toggleActive(slot)}
+                            onToggleHomeGame={() => toggleHomeGame(slot)}
                             isDeleting={isDeleting}
                           />
                         ))}
@@ -432,6 +476,7 @@ export default function AvailabilitySlotsPage() {
                         onEdit={() => { setEditSlot(slot); setIsModalOpen(true); }}
                         onDelete={() => handleDelete(slot)}
                         onToggleActive={() => toggleActive(slot)}
+                        onToggleHomeGame={() => toggleHomeGame(slot)}
                         isDeleting={isDeleting}
                       />
                     ))}

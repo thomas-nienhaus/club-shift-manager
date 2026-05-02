@@ -6,6 +6,7 @@ export type AvailabilitySlot = {
   label: string;
   sortOrder: number;
   isActive: boolean;
+  isHomeGameSlot: boolean;
   startTime: string | null;
   endTime: string | null;
   createdAt: string;

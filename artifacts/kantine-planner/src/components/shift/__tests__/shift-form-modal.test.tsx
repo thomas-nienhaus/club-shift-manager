@@ -27,7 +27,7 @@ import { ShiftFormModal } from '../shift-form-modal';
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function makeSlot(key: string, label: string, isActive = true): AvailabilitySlot {
-  return { id: 1, key, label, sortOrder: 1, isActive, startTime: null, endTime: null, createdAt: '' };
+  return { id: 1, key, label, sortOrder: 1, isActive, isHomeGameSlot: false, startTime: null, endTime: null, createdAt: '' };
 }
 
 const mockMutate = vi.fn();

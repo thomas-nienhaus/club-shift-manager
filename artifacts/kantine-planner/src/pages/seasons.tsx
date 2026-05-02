@@ -32,12 +32,15 @@ function HomeGameSection({ season }: { season: Season }) {
   const { mutate: deleteDate, isPending: isDeleting } = useDeleteHomeGameDate();
   const { data: allSlots } = useListAvailabilitySlots();
   const activeSlots = (allSlots ?? []).filter(s => s.isActive);
+  const homeGameSlot = (allSlots ?? []).find(s => s.isHomeGameSlot) ?? null;
 
   const totalCount = homeGameDates?.length ?? 0;
 
   const handleStep1Next = () => {
     const n = parseInt(count);
-    if (!n || n < 1 || !wizardSlot) return;
+    const slot = wizardSlot || homeGameSlot?.key || '';
+    if (!n || n < 1 || !slot) return;
+    if (!wizardSlot && homeGameSlot) setWizardSlot(homeGameSlot.key);
     setDates(Array(n).fill(''));
     setWizardStep('step2');
   };
@@ -106,32 +109,43 @@ function HomeGameSection({ season }: { season: Season }) {
           {wizardStep === 'step1' && (
             <div className="bg-muted/30 rounded-xl p-3 space-y-3 border border-border mt-1">
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Stap 1 — Aantal en dagdeel</p>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  min={1}
-                  value={count}
-                  onChange={e => setCount(e.target.value)}
-                  placeholder="Aantal wedstrijden"
-                  className="input-field text-sm py-2 flex-1"
-                  autoFocus
-                />
+              <input
+                type="number"
+                min={1}
+                value={count}
+                onChange={e => setCount(e.target.value)}
+                placeholder="Aantal wedstrijden"
+                className="input-field text-sm py-2 w-full"
+                autoFocus
+              />
+              {homeGameSlot ? (
+                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-xl text-sm">
+                  <span className="text-blue-700 font-bold flex-1">Extra dagdeel: {homeGameSlot.label}</span>
+                  <button
+                    onClick={() => setWizardSlot(wizardSlot ? '' : homeGameSlot.key)}
+                    className="text-xs text-blue-500 hover:text-blue-700 underline shrink-0"
+                  >
+                    {wizardSlot === homeGameSlot.key || !wizardSlot ? 'Wijzigen' : 'Herstellen'}
+                  </button>
+                </div>
+              ) : null}
+              {(!homeGameSlot || (wizardSlot !== homeGameSlot?.key && wizardSlot !== '')) && (
                 <select
                   value={wizardSlot}
                   onChange={e => setWizardSlot(e.target.value)}
-                  className="input-field text-sm py-2 flex-1"
+                  className="input-field text-sm py-2 w-full"
                 >
                   <option value="">Kies dagdeel...</option>
                   {activeSlots.map(s => (
                     <option key={s.key} value={s.key}>{s.label}</option>
                   ))}
                 </select>
-              </div>
+              )}
               <div className="flex gap-2">
                 <button onClick={handleCancel} className="btn-secondary text-sm py-2 flex-1">Annuleren</button>
                 <button
                   onClick={handleStep1Next}
-                  disabled={!count || parseInt(count) < 1 || !wizardSlot}
+                  disabled={!count || parseInt(count) < 1 || !(wizardSlot || homeGameSlot)}
                   className="btn-primary text-sm py-2 flex-1"
                 >
                   Volgende →

@@ -17,6 +17,7 @@ async function fetchSlots(): Promise<AvailabilitySlot[]> {
     label: s.label,
     sortOrder: s.sort_order,
     isActive: s.is_active,
+    isHomeGameSlot: s.is_home_game_slot ?? false,
     startTime: s.start_time,
     endTime: s.end_time,
     createdAt: s.created_at,
@@ -74,6 +75,20 @@ export function useDeleteAvailabilitySlot() {
     mutationFn: async (payload: { id: number }) => {
       const { error } = await supabase.from('availability_slots').delete().eq('id', payload.id);
       if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+  });
+}
+
+export function useSetHomeGameSlot() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (slotId: number | null) => {
+      await supabase.from('availability_slots').update({ is_home_game_slot: false }).neq('id', 0);
+      if (slotId !== null) {
+        const { error } = await supabase.from('availability_slots').update({ is_home_game_slot: true }).eq('id', slotId);
+        if (error) throw error;
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   });

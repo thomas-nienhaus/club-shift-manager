@@ -26,20 +26,22 @@ function normalize(s: string): string {
 }
 
 function parseDate(raw: unknown): string | null {
+  let dateStr: string | null = null;
   if (typeof raw === 'number') {
-    // XLSX serial date
     const d = XLSX.SSF.parse_date_code(raw);
     if (!d) return null;
-    return `${d.y}-${String(d.m).padStart(2, '0')}-${String(d.d).padStart(2, '0')}`;
-  }
-  if (typeof raw === 'string') {
-    // Try DD-MM-YYYY or DD/MM/YYYY
+    dateStr = `${d.y}-${String(d.m).padStart(2, '0')}-${String(d.d).padStart(2, '0')}`;
+  } else if (typeof raw === 'string') {
     const m = raw.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
-    if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
-    // Try YYYY-MM-DD
-    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+    if (m) dateStr = `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+    else if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) dateStr = raw;
   }
-  return null;
+  if (!dateStr) return null;
+  // Validate that the date is a real calendar date (rejects e.g. 32-13-2025)
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  const dt = new Date(dateStr + 'T00:00:00Z');
+  if (isNaN(dt.getTime()) || dt.getUTCFullYear() !== y || dt.getUTCMonth() + 1 !== mo || dt.getUTCDate() !== d) return null;
+  return dateStr;
 }
 
 function parseSlotKey(raw: string): string | null {

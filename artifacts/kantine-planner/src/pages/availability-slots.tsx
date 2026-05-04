@@ -37,6 +37,7 @@ interface SlotFormState {
   day: string;
   label: string;
   isActive: boolean;
+  isHomeGameSlot: boolean;
   startTime: string;
   endTime: string;
   homeStartTime: string;
@@ -58,8 +59,10 @@ function SlotFormModal({
   const { toast } = useToast();
   const { mutate: createSlot, isPending: isCreating } = useCreateAvailabilitySlot();
   const { mutate: updateSlot, isPending: isUpdating } = useUpdateAvailabilitySlot();
+  const { mutate: setHomeGameSlot, isPending: isSettingHomeGame } = useSetHomeGameSlot();
 
-  const [form, setForm] = useState<SlotFormState>({ day: 'monday', label: '', isActive: true, startTime: '', endTime: '', homeStartTime: '', homeEndTime: '' });
+  const emptyForm: SlotFormState = { day: 'monday', label: '', isActive: true, isHomeGameSlot: false, startTime: '', endTime: '', homeStartTime: '', homeEndTime: '' };
+  const [form, setForm] = useState<SlotFormState>(emptyForm);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -68,43 +71,49 @@ function SlotFormModal({
           day: getDayFromKey(editSlot.key),
           label: editSlot.label,
           isActive: editSlot.isActive ?? true,
+          isHomeGameSlot: editSlot.isHomeGameSlot ?? false,
           startTime: editSlot.startTime ?? '',
           endTime: editSlot.endTime ?? '',
           homeStartTime: editSlot.homeStartTime ?? '',
           homeEndTime: editSlot.homeEndTime ?? '',
         });
       } else {
-        setForm({ day: 'monday', label: '', isActive: true, startTime: '', endTime: '', homeStartTime: '', homeEndTime: '' });
+        setForm(emptyForm);
       }
     }
   }, [isOpen, editSlot]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const invalidate = () => {
-      queryClient.invalidateQueries({ queryKey: ['availability-slots'] });
-    };
+    const invalidate = () => queryClient.invalidateQueries({ queryKey: ['availability-slots'] });
     const times = {
       startTime: form.startTime || null,
       endTime: form.endTime || null,
-      homeStartTime: form.homeStartTime || null,
-      homeEndTime: form.homeEndTime || null,
+      homeStartTime: form.isHomeGameSlot ? null : (form.homeStartTime || null),
+      homeEndTime: form.isHomeGameSlot ? null : (form.homeEndTime || null),
     };
+
+    const applyHomeGameFlag = (id: number, cb: () => void) => {
+      const changed = !editSlot || form.isHomeGameSlot !== editSlot.isHomeGameSlot;
+      if (!changed) { cb(); return; }
+      setHomeGameSlot(form.isHomeGameSlot ? id : null, { onSuccess: cb, onError: (err: any) => toast({ title: 'Fout', description: err.message, variant: 'destructive' }) });
+    };
+
     if (editSlot) {
       updateSlot({ id: editSlot.id, data: { label: form.label, isActive: form.isActive, ...times } }, {
-        onSuccess: () => { invalidate(); toast({ title: 'Opgeslagen', description: 'Dienst bijgewerkt.' }); onClose(); },
-        onError: (e: any) => toast({ title: 'Fout', description: e.message, variant: 'destructive' }),
+        onSuccess: () => applyHomeGameFlag(editSlot.id, () => { invalidate(); toast({ title: 'Opgeslagen', description: 'Dienst bijgewerkt.' }); onClose(); }),
+        onError: (err: any) => toast({ title: 'Fout', description: err.message, variant: 'destructive' }),
       });
     } else {
       const key = `${form.day}_${makeLabelSlug(form.label)}`;
       createSlot({ data: { key, label: form.label, isActive: form.isActive, ...times, sortOrder: currentSlotsLength } }, {
-        onSuccess: () => { invalidate(); toast({ title: 'Aangemaakt', description: 'Nieuwe dienst toegevoegd.' }); onClose(); },
-        onError: (e: any) => toast({ title: 'Fout', description: e.message, variant: 'destructive' }),
+        onSuccess: (data: any) => applyHomeGameFlag(data.id, () => { invalidate(); toast({ title: 'Aangemaakt', description: 'Nieuwe dienst toegevoegd.' }); onClose(); }),
+        onError: (err: any) => toast({ title: 'Fout', description: err.message, variant: 'destructive' }),
       });
     }
   };
 
-  const isPending = isCreating || isUpdating;
+  const isPending = isCreating || isUpdating || isSettingHomeGame;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={editSlot ? 'Dienst Bewerken' : 'Nieuwe Dienst'}>
@@ -164,7 +173,7 @@ function SlotFormModal({
             </div>
           </div>
         </div>
-        {!editSlot?.isHomeGameSlot && (
+        {!form.isHomeGameSlot && (
           <div>
             <label className="label-text">Thuiswedstrijd tijden (optioneel)</label>
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -192,17 +201,31 @@ function SlotFormModal({
           </div>
         )}
 
-        <div className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            id="isActive"
-            checked={form.isActive}
-            onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))}
-            className="w-4 h-4 accent-primary"
-          />
-          <label htmlFor="isActive" className="text-sm font-semibold text-foreground cursor-pointer">
-            Actief (zichtbaar in planning en beschikbaarheid)
-          </label>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="isActive"
+              checked={form.isActive}
+              onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))}
+              className="w-4 h-4 accent-primary"
+            />
+            <label htmlFor="isActive" className="text-sm font-semibold text-foreground cursor-pointer">
+              Actief (zichtbaar in planning en beschikbaarheid)
+            </label>
+          </div>
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="isHomeGameSlot"
+              checked={form.isHomeGameSlot}
+              onChange={e => setForm(f => ({ ...f, isHomeGameSlot: e.target.checked }))}
+              className="w-4 h-4 accent-primary"
+            />
+            <label htmlFor="isHomeGameSlot" className="text-sm font-semibold text-foreground cursor-pointer">
+              Extra dienst bij thuiswedstrijden
+            </label>
+          </div>
         </div>
         <div className="flex justify-end gap-3 pt-4 border-t border-border">
           <button type="button" onClick={onClose} className="btn-secondary" disabled={isPending}>Annuleren</button>
@@ -247,9 +270,16 @@ function ActiveBadge({ slot, onToggle }: { slot: AvailabilitySlot; onToggle: () 
 }
 
 function SlotTime({ slot }: { slot: AvailabilitySlot }) {
-  if (slot.startTime && slot.endTime) return <span className="font-medium text-foreground">{slot.startTime} – {slot.endTime}</span>;
-  if (slot.startTime) return <span className="font-medium text-foreground">vanaf {slot.startTime}</span>;
-  return <span>—</span>;
+  const away = slot.startTime && slot.endTime ? `${slot.startTime} – ${slot.endTime}` : slot.startTime ? `vanaf ${slot.startTime}` : null;
+  const home = slot.homeStartTime && slot.homeEndTime ? `${slot.homeStartTime} – ${slot.homeEndTime}` : null;
+  if (!away && !home) return <span>—</span>;
+  if (away && home) return (
+    <span className="flex flex-col gap-0.5 text-xs">
+      <span className="font-medium text-foreground">Uit: {away}</span>
+      <span className="font-medium text-blue-700">Thuis: {home}</span>
+    </span>
+  );
+  return <span className="font-medium text-foreground">{away ?? home}</span>;
 }
 
 function SortableRow({
@@ -276,7 +306,6 @@ function SortableRow({
       </td>
       <td className="p-4 font-bold text-foreground">{slot.label}</td>
       <td className="p-4 text-sm text-muted-foreground">{DAY_LABELS[getDayFromKey(slot.key)] ?? '—'}</td>
-      <td className="p-4 font-mono text-sm text-muted-foreground">{slot.key}</td>
       <td className="p-4 text-sm text-muted-foreground">
         <SlotTime slot={slot} />
       </td>
@@ -353,14 +382,16 @@ function SortableCard({
       <div className="flex items-center justify-between gap-2 pl-6">
         <div className="flex flex-col gap-0.5 min-w-0">
           <span className="text-xs text-muted-foreground">{DAY_LABELS[getDayFromKey(slot.key)] ?? '—'}</span>
-          <span className="font-mono text-xs text-muted-foreground">{slot.key}</span>
-          {(slot.startTime || slot.endTime) && (
-            <span className="text-xs font-medium text-foreground">
-              {slot.startTime && slot.endTime
-                ? `${slot.startTime} – ${slot.endTime}`
-                : slot.startTime
-                  ? `vanaf ${slot.startTime}`
-                  : ''}
+          {(slot.startTime || slot.homeStartTime) && (
+            <span className="flex flex-col gap-0.5">
+              {slot.startTime && (
+                <span className="text-xs font-medium text-foreground">
+                  {slot.startTime && slot.endTime ? `Uit: ${slot.startTime} – ${slot.endTime}` : `vanaf ${slot.startTime}`}
+                </span>
+              )}
+              {slot.homeStartTime && slot.homeEndTime && (
+                <span className="text-xs font-medium text-blue-700">Thuis: {slot.homeStartTime} – {slot.homeEndTime}</span>
+              )}
             </span>
           )}
         </div>
@@ -471,7 +502,6 @@ export default function AvailabilitySlotsPage() {
                       <th className="p-4 pl-6 w-8"></th>
                       <th className="p-4">Label</th>
                       <th className="p-4">Dag</th>
-                      <th className="p-4">Sleutel</th>
                       <th className="p-4">Tijd</th>
                       <th className="p-4 text-center">Actief</th>
                       <th className="p-4 text-center">Thuiswedstrijd</th>

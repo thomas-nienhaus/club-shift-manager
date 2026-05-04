@@ -49,7 +49,7 @@ function HomeGameSection({ season }: { season: Season }) {
   const handleSave = () => {
     const validDates = dates.filter(d => d !== '');
     if (validDates.length === 0) return;
-    createDates({ seasonId: season.id, dates: validDates, extraSlot: effectiveSlot }, {
+    createDates({ seasonId: season.id, dates: validDates, extraSlot: effectiveSlot, allSlots: allSlots ?? [] }, {
       onSuccess: () => {
         toast({ title: 'Opgeslagen', description: `${validDates.length} thuiswedstrijden toegevoegd.` });
         setWizardStep('idle');
@@ -110,7 +110,7 @@ function HomeGameSection({ season }: { season: Season }) {
 
           {wizardStep === 'step1' && (
             <div className="bg-muted/30 rounded-xl p-3 space-y-3 border border-border mt-1">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Stap 1 — Aantal en dagdeel</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Stap 1 — Aantal en dienst</p>
               <input
                 type="number"
                 min={1}
@@ -122,7 +122,7 @@ function HomeGameSection({ season }: { season: Season }) {
               />
               {homeGameSlot && !overrideSlot ? (
                 <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-xl text-sm">
-                  <span className="text-blue-700 font-bold flex-1">Extra dagdeel: {homeGameSlot.label}</span>
+                  <span className="text-blue-700 font-bold flex-1">Extra dienst: {homeGameSlot.label}</span>
                   <button
                     onClick={() => { setOverrideSlot(true); setWizardSlot(homeGameSlot.key); }}
                     className="text-xs text-blue-500 hover:text-blue-700 underline shrink-0"
@@ -137,7 +137,7 @@ function HomeGameSection({ season }: { season: Season }) {
                     onChange={e => setWizardSlot(e.target.value)}
                     className="input-field text-sm py-2 w-full"
                   >
-                    <option value="">Kies dagdeel...</option>
+                    <option value="">Kies dienst...</option>
                     {activeSlots.map(s => (
                       <option key={s.key} value={s.key}>{s.label}</option>
                     ))}
@@ -437,13 +437,13 @@ function CreateSeasonModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, on
                   Diensten automatisch genereren
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Maakt voor elke datum in het seizoen automatisch diensten aan op basis van de actieve dagdelen.
+                  Maakt voor elke datum in het seizoen automatisch diensten aan op basis van de actieve diensten.
                 </p>
                 {autoGenerate && activeSlots.length > 0 && (
                   <div className="mt-2 flex items-start gap-1.5">
                     <Info className="w-3.5 h-3.5 text-primary/70 flex-shrink-0 mt-0.5" />
                     <div className="text-xs text-primary/80">
-                      <span className="font-semibold">Actieve dagdelen: </span>
+                      <span className="font-semibold">Actieve diensten: </span>
                       {activeSlots.map(s => s.label).join(', ')}
                     </div>
                   </div>

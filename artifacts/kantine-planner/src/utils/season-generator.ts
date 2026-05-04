@@ -49,7 +49,7 @@ export async function generateSeasonShifts(seasonId: number): Promise<{ shiftsCr
     current = addDays(current, 1);
   }
 
-  // Voeg extra dagdelen toe op thuiswedstrijddatums
+  // Voeg extra diensten toe op thuiswedstrijddatums
   const { data: homeGameDates } = await supabase
     .from('home_game_dates')
     .select('date, extra_slot')
@@ -60,7 +60,7 @@ export async function generateSeasonShifts(seasonId: number): Promise<{ shiftsCr
   }
 
   if (shifts.length === 0) {
-    return { shiftsCreated: 0, message: 'Geen actieve dagdelen gevonden voor dit seizoen.' };
+    return { shiftsCreated: 0, message: 'Geen actieve diensten gevonden voor dit seizoen.' };
   }
 
   // Plain insert — this function is only called for newly created seasons

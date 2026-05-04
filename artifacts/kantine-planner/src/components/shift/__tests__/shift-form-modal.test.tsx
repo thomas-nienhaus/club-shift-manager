@@ -27,7 +27,7 @@ import { ShiftFormModal } from '../shift-form-modal';
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function makeSlot(key: string, label: string, isActive = true): AvailabilitySlot {
-  return { id: 1, key, label, sortOrder: 1, isActive, isHomeGameSlot: false, startTime: null, endTime: null, createdAt: '' };
+  return { id: 1, key, label, sortOrder: 1, isActive, isHomeGameSlot: false, startTime: null, endTime: null, homeStartTime: null, homeEndTime: null, createdAt: '' };
 }
 
 const mockMutate = vi.fn();
@@ -92,7 +92,7 @@ describe('ShiftFormModal — slot status', () => {
     renderModal([], []);
 
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
-    expect(screen.getByText(/Geen dagdeel aangemaakt/i)).toBeInTheDocument();
+    expect(screen.getByText(/Geen dienst aangemaakt/i)).toBeInTheDocument();
   });
 });
 

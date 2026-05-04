@@ -100,7 +100,7 @@ export function ShiftFormModal({ isOpen, onClose, editShift, defaultDate }: Shif
             <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="input-field" />
           </div>
           <div>
-            <label className="label-text">Dagdeel / Tijdslot</label>
+            <label className="label-text">Dienst / Tijdslot</label>
             {slotStatus === 'available' && (
               <select required value={slot} onChange={e => setSlot(e.target.value)} className="input-field">
                 {activeSlotsForDay.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
@@ -109,13 +109,13 @@ export function ShiftFormModal({ isOpen, onClose, editShift, defaultDate }: Shif
             {slotStatus === 'inactive' && (
               <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm">
                 <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-amber-600" />
-                <span>Het dagdeel voor deze dag bestaat maar is <strong>niet actief</strong>. Activeer het via <strong>Instellingen → Dagdelen</strong>.</span>
+                <span>Het dienst voor deze dag bestaat maar is <strong>niet actief</strong>. Activeer het via <strong>Instellingen → Diensten</strong>.</span>
               </div>
             )}
             {slotStatus === 'none' && (
               <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm">
                 <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-amber-600" />
-                <span>Geen dagdeel aangemaakt voor deze dag. Maak er eerst een aan via <strong>Instellingen → Dagdelen</strong>.</span>
+                <span>Geen dienst aangemaakt voor deze dag. Maak er eerst een aan via <strong>Instellingen → Diensten</strong>.</span>
               </div>
             )}
           </div>

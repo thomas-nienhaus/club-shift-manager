@@ -103,7 +103,7 @@ function PrintWeeklyTable({ shifts }: { shifts: ShiftWithAssignments[] }) {
             <thead>
               <tr>
                 <th>Datum</th>
-                <th>Dagdeel</th>
+                <th>Dienst</th>
                 <th>Tijden</th>
                 <th>Vrijwilligers</th>
               </tr>
@@ -599,16 +599,16 @@ export default function Dashboard() {
                       </div>
                     )}
 
-                    {/* Dagdeel */}
+                    {/* Dienst */}
                     {slots.length > 1 && (
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">Dagdeel</p>
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">Dienst</p>
                         <select
                           value={slotFilter ?? ''}
                           onChange={e => setSlotFilter(e.target.value || null)}
                           className="w-full px-4 py-2.5 rounded-xl font-bold text-sm border-2 border-border bg-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                         >
-                          <option value="">Alle dagdelen</option>
+                          <option value="">Alle diensten</option>
                           {slots.map(s => (
                             <option key={s.key} value={s.key}>{s.label}</option>
                           ))}
@@ -667,7 +667,7 @@ export default function Dashboard() {
                     {slots.length > 0 && (
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Dagdelen</p>
+                          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Diensten</p>
                           <button
                             type="button"
                             onClick={() => setPrintSlotFilter(printSlotFilter === null ? [] : null)}
@@ -699,7 +699,7 @@ export default function Dashboard() {
                         </div>
                         {printSlotFilter !== null && printSlotFilter.length === 0 && (
                           <p className="text-xs text-amber-600 font-semibold mt-1.5 px-1">
-                            Selecteer minimaal één dagdeel.
+                            Selecteer minimaal één dienst.
                           </p>
                         )}
                       </div>

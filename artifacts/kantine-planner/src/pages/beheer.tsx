@@ -87,7 +87,7 @@ export default function Beheer() {
               <Link href="/availability-slots">
                 <div className="bg-white rounded-2xl border-2 border-border p-6 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer">
                   <Clock className="w-8 h-8 text-primary mb-3" />
-                  <h3 className="font-bold text-lg mb-1">Dagdelen</h3>
+                  <h3 className="font-bold text-lg mb-1">Diensten</h3>
                   <p className="text-sm text-muted-foreground">Beheer de beschikbare tijdslots voor diensten.</p>
                 </div>
               </Link>

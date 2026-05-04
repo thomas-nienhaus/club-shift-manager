@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import type { HomeGameDate } from '@/lib/types';
+import type { AvailabilitySlot, HomeGameDate } from '@/lib/types';
 
 const key = (seasonId: number) => ['home-game-dates', seasonId] as const;
 
@@ -49,11 +49,23 @@ export function useCreateHomeGameDate() {
 export function useCreateHomeGameDates() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ seasonId, dates, extraSlot }: { seasonId: number; dates: string[]; extraSlot: string }) => {
+    mutationFn: async ({ seasonId, dates, extraSlot, allSlots }: { seasonId: number; dates: string[]; extraSlot: string; allSlots: AvailabilitySlot[] }) => {
       const rows = dates.map(date => ({ season_id: seasonId, date, extra_slot: extraSlot }));
       const { error } = await supabase.from('home_game_dates').insert(rows);
       if (error) throw error;
-      const shiftRows = dates.map(date => ({ season_id: seasonId, date, slot: extraSlot }));
+
+      // Build shift rows: extra slot + regular slots with home times applied
+      const regularSlots = allSlots.filter(s => !s.isHomeGameSlot && s.isActive && s.homeStartTime && s.homeEndTime);
+      const shiftRows = dates.flatMap(date => [
+        { season_id: seasonId, date, slot: extraSlot },
+        ...regularSlots.map(s => ({
+          season_id: seasonId,
+          date,
+          slot: s.key,
+          start_time: s.homeStartTime,
+          end_time: s.homeEndTime,
+        })),
+      ]);
       await supabase.from('shifts').upsert(shiftRows, { onConflict: 'season_id,date,slot' });
     },
     onSuccess: (_data, vars) => {

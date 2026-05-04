@@ -308,9 +308,9 @@ export default function Seasons() {
                   </button>
 
                   <div className="flex gap-3">
-                    <Link href={`/?startDate=${season.startDate}&endDate=${season.endDate}`} className="flex-1">
+                    <Link href={`/beheer?season=${season.id}`} className="flex-1">
                       <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold border-2 border-border text-foreground hover:bg-muted transition-colors">
-                        <Eye className="w-4 h-4" /> Planning
+                        <Eye className="w-4 h-4" /> Planning beheren
                       </button>
                     </Link>
                     <button

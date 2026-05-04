@@ -25,9 +25,10 @@ export async function generateSeasonShifts(seasonId: number): Promise<{ shiftsCr
   const season = seasonRes.data;
   const slots = slotsRes.data;
 
-  // Build day-of-week → slot keys map
+  // Build day-of-week → slot keys map (thuiswedstrijd-only slots worden apart toegevoegd via home game dates)
   const daySlots = new Map<number, string[]>();
   for (const slot of slots) {
+    if (slot.is_home_game_slot) continue;
     const dayIdx = slotDayIndex(slot.key);
     if (dayIdx === undefined) continue;
     if (!daySlots.has(dayIdx)) daySlots.set(dayIdx, []);

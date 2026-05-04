@@ -47,7 +47,7 @@ export function AutoScheduleModal({ isOpen, onClose, initialSeasonId = null }: {
               <p className="font-bold mb-1">Hoe werkt het?</p>
               <ul className="space-y-1 text-amber-700">
                 <li>• Alleen lege diensten (zonder vrijwilligers) worden gevuld</li>
-                <li>• Vrijwilligers worden ingedeeld op hun beschikbare dagdelen</li>
+                <li>• Vrijwilligers worden ingedeeld op hun beschikbare diensten</li>
                 <li>• Groepen worden samen ingedeeld</li>
                 <li>• Elke vrijwilliger krijgt ongeveer evenveel diensten</li>
               </ul>

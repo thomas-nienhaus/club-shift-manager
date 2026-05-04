@@ -9,6 +9,8 @@ export type AvailabilitySlot = {
   isHomeGameSlot: boolean;
   startTime: string | null;
   endTime: string | null;
+  homeStartTime: string | null;
+  homeEndTime: string | null;
   createdAt: string;
 };
 

@@ -39,6 +39,8 @@ interface SlotFormState {
   isActive: boolean;
   startTime: string;
   endTime: string;
+  homeStartTime: string;
+  homeEndTime: string;
 }
 
 function SlotFormModal({
@@ -57,7 +59,7 @@ function SlotFormModal({
   const { mutate: createSlot, isPending: isCreating } = useCreateAvailabilitySlot();
   const { mutate: updateSlot, isPending: isUpdating } = useUpdateAvailabilitySlot();
 
-  const [form, setForm] = useState<SlotFormState>({ day: 'monday', label: '', isActive: true, startTime: '', endTime: '' });
+  const [form, setForm] = useState<SlotFormState>({ day: 'monday', label: '', isActive: true, startTime: '', endTime: '', homeStartTime: '', homeEndTime: '' });
 
   React.useEffect(() => {
     if (isOpen) {
@@ -68,9 +70,11 @@ function SlotFormModal({
           isActive: editSlot.isActive ?? true,
           startTime: editSlot.startTime ?? '',
           endTime: editSlot.endTime ?? '',
+          homeStartTime: editSlot.homeStartTime ?? '',
+          homeEndTime: editSlot.homeEndTime ?? '',
         });
       } else {
-        setForm({ day: 'monday', label: '', isActive: true, startTime: '', endTime: '' });
+        setForm({ day: 'monday', label: '', isActive: true, startTime: '', endTime: '', homeStartTime: '', homeEndTime: '' });
       }
     }
   }, [isOpen, editSlot]);
@@ -83,16 +87,18 @@ function SlotFormModal({
     const times = {
       startTime: form.startTime || null,
       endTime: form.endTime || null,
+      homeStartTime: form.homeStartTime || null,
+      homeEndTime: form.homeEndTime || null,
     };
     if (editSlot) {
       updateSlot({ id: editSlot.id, data: { label: form.label, isActive: form.isActive, ...times } }, {
-        onSuccess: () => { invalidate(); toast({ title: 'Opgeslagen', description: 'Dagdeel bijgewerkt.' }); onClose(); },
+        onSuccess: () => { invalidate(); toast({ title: 'Opgeslagen', description: 'Dienst bijgewerkt.' }); onClose(); },
         onError: (e: any) => toast({ title: 'Fout', description: e.message, variant: 'destructive' }),
       });
     } else {
       const key = `${form.day}_${makeLabelSlug(form.label)}`;
       createSlot({ data: { key, label: form.label, isActive: form.isActive, ...times, sortOrder: currentSlotsLength } }, {
-        onSuccess: () => { invalidate(); toast({ title: 'Aangemaakt', description: 'Nieuw dagdeel toegevoegd.' }); onClose(); },
+        onSuccess: () => { invalidate(); toast({ title: 'Aangemaakt', description: 'Nieuwe dienst toegevoegd.' }); onClose(); },
         onError: (e: any) => toast({ title: 'Fout', description: e.message, variant: 'destructive' }),
       });
     }
@@ -101,7 +107,7 @@ function SlotFormModal({
   const isPending = isCreating || isUpdating;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={editSlot ? 'Dagdeel Bewerken' : 'Nieuw Dagdeel'}>
+    <Modal isOpen={isOpen} onClose={onClose} title={editSlot ? 'Dienst Bewerken' : 'Nieuwe Dienst'}>
       <form onSubmit={handleSubmit} className="space-y-5">
         {!editSlot ? (
           <div>
@@ -135,7 +141,7 @@ function SlotFormModal({
           />
         </div>
         <div>
-          <label className="label-text">Tijdsduur (optioneel)</label>
+          <label className="label-text">Uitwedstrijd tijden (optioneel)</label>
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="flex-1">
               <label className="text-xs text-muted-foreground font-medium mb-1 block">Begintijd</label>
@@ -158,6 +164,33 @@ function SlotFormModal({
             </div>
           </div>
         </div>
+        {!editSlot?.isHomeGameSlot && (
+          <div>
+            <label className="label-text">Thuiswedstrijd tijden (optioneel)</label>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1">
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Begintijd</label>
+                <input
+                  type="time"
+                  value={form.homeStartTime}
+                  onChange={e => setForm(f => ({ ...f, homeStartTime: e.target.value }))}
+                  className="input-field"
+                />
+              </div>
+              <span className="text-muted-foreground font-bold sm:mt-5 hidden sm:inline">–</span>
+              <div className="flex-1">
+                <label className="text-xs text-muted-foreground font-medium mb-1 block">Eindtijd</label>
+                <input
+                  type="time"
+                  value={form.homeEndTime}
+                  onChange={e => setForm(f => ({ ...f, homeEndTime: e.target.value }))}
+                  className="input-field"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Worden gebruikt als de dienst op een thuiswedstrijddag valt.</p>
+          </div>
+        )}
 
         <div className="flex items-center gap-3">
           <input
@@ -184,7 +217,7 @@ function HomeGameBadge({ slot, onToggle }: { slot: AvailabilitySlot; onToggle: (
   return (
     <button
       onClick={onToggle}
-      title={slot.isHomeGameSlot ? 'Thuiswedstrijd dagdeel — klik om te verwijderen' : 'Instellen als extra dagdeel bij thuiswedstrijden'}
+      title={slot.isHomeGameSlot ? 'Thuiswedstrijd dienst — klik om te verwijderen' : 'Instellen als extra dienst bij thuiswedstrijden'}
       className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-colors ${
         slot.isHomeGameSlot
           ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
@@ -376,7 +409,7 @@ export default function AvailabilitySlotsPage() {
   };
 
   const handleDelete = (slot: AvailabilitySlot) => {
-    if (window.confirm(`Weet je zeker dat je het dagdeel "${slot.label}" wilt verwijderen? Bestaande diensten met dit dagdeel blijven bestaan.`)) {
+    if (window.confirm(`Weet je zeker dat je het dienst "${slot.label}" wilt verwijderen? Bestaande diensten met dit dienst blijven bestaan.`)) {
       deleteSlot({ id: slot.id }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ['availability-slots'] });
@@ -400,8 +433,8 @@ export default function AvailabilitySlotsPage() {
       onSuccess: () => toast({
         title: nextId ? 'Ingesteld' : 'Verwijderd',
         description: nextId
-          ? `"${slot.label}" is het extra dagdeel bij thuiswedstrijden.`
-          : `Thuiswedstrijd dagdeel verwijderd.`,
+          ? `"${slot.label}" is het extra dienst bij thuiswedstrijden.`
+          : `Thuiswedstrijd dienst verwijderd.`,
       }),
       onError: (e: any) => toast({ title: 'Fout', description: e.message, variant: 'destructive' }),
     });
@@ -412,14 +445,14 @@ export default function AvailabilitySlotsPage() {
       <AppLayout>
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
           <div>
-            <h1 className="text-4xl font-display font-extrabold mb-2">Dagdelen</h1>
-            <p className="text-muted-foreground text-lg">Beheer de beschikbare dagdelen voor diensten en beschikbaarheid.</p>
+            <h1 className="text-4xl font-display font-extrabold mb-2">Diensten</h1>
+            <p className="text-muted-foreground text-lg">Beheer de beschikbare diensten voor diensten en beschikbaarheid.</p>
           </div>
           <button
             onClick={() => { setEditSlot(null); setIsModalOpen(true); }}
             className="btn-primary flex items-center gap-2 shrink-0"
           >
-            <Plus className="w-5 h-5" /> Nieuw Dagdeel
+            <Plus className="w-5 h-5" /> Nieuwe Dienst
           </button>
         </div>
 
@@ -427,7 +460,7 @@ export default function AvailabilitySlotsPage() {
           {isLoading ? (
             <div className="p-12 text-center text-muted-foreground font-bold animate-pulse">Laden...</div>
           ) : localOrder.length === 0 ? (
-            <div className="p-12 text-center text-muted-foreground">Geen dagdelen geconfigureerd.</div>
+            <div className="p-12 text-center text-muted-foreground">Geen diensten geconfigureerd.</div>
           ) : (
             <>
               {/* ── Desktop table (md+) ── */}

@@ -435,10 +435,10 @@ function ImportVolunteersDialog({ isOpen, onClose }: { isOpen: boolean; onClose:
               <li><strong>Naam</strong>: verplicht</li>
               <li><strong>Email</strong>: optioneel</li>
               <li><strong>Telefoon</strong>: optioneel</li>
-              <li><strong>Beschikbaarheid</strong>: optioneel — kommagescheiden dagdelen</li>
+              <li><strong>Beschikbaarheid</strong>: optioneel — kommagescheiden diensten</li>
             </ul>
             <p className="text-blue-700/80 text-xs mb-3">
-              Geldige dagdelen: {slots.map(s => s.label).join(', ')}
+              Geldige diensten: {slots.map(s => s.label).join(', ')}
             </p>
             <button
               type="button"

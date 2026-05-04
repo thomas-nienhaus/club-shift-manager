@@ -20,6 +20,8 @@ async function fetchSlots(): Promise<AvailabilitySlot[]> {
     isHomeGameSlot: s.is_home_game_slot ?? false,
     startTime: s.start_time,
     endTime: s.end_time,
+    homeStartTime: s.home_start_time ?? null,
+    homeEndTime: s.home_end_time ?? null,
     createdAt: s.created_at,
   }));
 }
@@ -31,11 +33,11 @@ export function useListAvailabilitySlots() {
 export function useCreateAvailabilitySlot() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { data: { key: string; label: string; isActive: boolean; startTime?: string | null; endTime?: string | null; sortOrder?: number } }) => {
+    mutationFn: async (payload: { data: { key: string; label: string; isActive: boolean; startTime?: string | null; endTime?: string | null; homeStartTime?: string | null; homeEndTime?: string | null; sortOrder?: number } }) => {
       const d = payload.data;
       const { data, error } = await supabase
         .from('availability_slots')
-        .insert({ key: d.key, label: d.label, is_active: d.isActive, start_time: d.startTime ?? null, end_time: d.endTime ?? null, sort_order: d.sortOrder ?? 0 })
+        .insert({ key: d.key, label: d.label, is_active: d.isActive, start_time: d.startTime ?? null, end_time: d.endTime ?? null, home_start_time: d.homeStartTime ?? null, home_end_time: d.homeEndTime ?? null, sort_order: d.sortOrder ?? 0 })
         .select()
         .single();
       if (error) throw error;
@@ -48,13 +50,15 @@ export function useCreateAvailabilitySlot() {
 export function useUpdateAvailabilitySlot() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { id: number; data: { label?: string; isActive?: boolean; startTime?: string | null; endTime?: string | null; sortOrder?: number } }) => {
+    mutationFn: async (payload: { id: number; data: { label?: string; isActive?: boolean; startTime?: string | null; endTime?: string | null; homeStartTime?: string | null; homeEndTime?: string | null; sortOrder?: number } }) => {
       const d = payload.data;
       const update: Record<string, unknown> = {};
       if (d.label !== undefined) update.label = d.label;
       if (d.isActive !== undefined) update.is_active = d.isActive;
       if (d.startTime !== undefined) update.start_time = d.startTime;
       if (d.endTime !== undefined) update.end_time = d.endTime;
+      if (d.homeStartTime !== undefined) update.home_start_time = d.homeStartTime;
+      if (d.homeEndTime !== undefined) update.home_end_time = d.homeEndTime;
       if (d.sortOrder !== undefined) update.sort_order = d.sortOrder;
       const { data, error } = await supabase
         .from('availability_slots')

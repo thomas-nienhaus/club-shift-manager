@@ -93,7 +93,7 @@ export function AssignModal({ isOpen, onClose, shift }: AssignModalProps) {
       <form onSubmit={handleSubmit} className="space-y-5">
         {shift && (
           <div className="bg-muted/60 rounded-xl px-4 py-3 text-sm text-muted-foreground font-medium">
-            Dagdeel: <span className="text-foreground font-bold">{getLabel(shift.slot)}</span>
+            Dienst: <span className="text-foreground font-bold">{getLabel(shift.slot)}</span>
           </div>
         )}
         <div>
@@ -106,12 +106,12 @@ export function AssignModal({ isOpen, onClose, shift }: AssignModalProps) {
             <select required value={selectedVolunteerId} onChange={e => handleVolunteerChange(e.target.value)} className="input-field">
               <option value="" disabled>— Kies een vrijwilliger —</option>
               {availableVolunteers.length > 0 && (
-                <optgroup label="Beschikbaar voor dit dagdeel">
+                <optgroup label="Beschikbaar voor dit dienst">
                   {availableVolunteers.map(v => <option key={v.id} value={v.id}>{v.name}{v.groupMembers?.length ? ` 👥 groep (${v.groupMembers.length + 1})` : ''}</option>)}
                 </optgroup>
               )}
               {unavailableVolunteers.length > 0 && (
-                <optgroup label="Niet beschikbaar voor dit dagdeel">
+                <optgroup label="Niet beschikbaar voor dit dienst">
                   {unavailableVolunteers.map(v => <option key={v.id} value={v.id}>{v.name} (beschikbaar: {v.availability.map(s => getLabel(s)).join(', ') || 'geen'})</option>)}
                 </optgroup>
               )}

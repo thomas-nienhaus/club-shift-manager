@@ -270,9 +270,16 @@ function ActiveBadge({ slot, onToggle }: { slot: AvailabilitySlot; onToggle: () 
 }
 
 function SlotTime({ slot }: { slot: AvailabilitySlot }) {
-  if (slot.startTime && slot.endTime) return <span className="font-medium text-foreground">{slot.startTime} – {slot.endTime}</span>;
-  if (slot.startTime) return <span className="font-medium text-foreground">vanaf {slot.startTime}</span>;
-  return <span>—</span>;
+  const away = slot.startTime && slot.endTime ? `${slot.startTime} – ${slot.endTime}` : slot.startTime ? `vanaf ${slot.startTime}` : null;
+  const home = slot.homeStartTime && slot.homeEndTime ? `${slot.homeStartTime} – ${slot.homeEndTime}` : null;
+  if (!away && !home) return <span>—</span>;
+  if (away && home) return (
+    <span className="flex flex-col gap-0.5 text-xs">
+      <span className="font-medium text-foreground">Uit: {away}</span>
+      <span className="font-medium text-blue-700">Thuis: {home}</span>
+    </span>
+  );
+  return <span className="font-medium text-foreground">{away ?? home}</span>;
 }
 
 function SortableRow({
@@ -377,13 +384,16 @@ function SortableCard({
         <div className="flex flex-col gap-0.5 min-w-0">
           <span className="text-xs text-muted-foreground">{DAY_LABELS[getDayFromKey(slot.key)] ?? '—'}</span>
           <span className="font-mono text-xs text-muted-foreground">{slot.key}</span>
-          {(slot.startTime || slot.endTime) && (
-            <span className="text-xs font-medium text-foreground">
-              {slot.startTime && slot.endTime
-                ? `${slot.startTime} – ${slot.endTime}`
-                : slot.startTime
-                  ? `vanaf ${slot.startTime}`
-                  : ''}
+          {(slot.startTime || slot.homeStartTime) && (
+            <span className="flex flex-col gap-0.5">
+              {slot.startTime && (
+                <span className="text-xs font-medium text-foreground">
+                  {slot.startTime && slot.endTime ? `Uit: ${slot.startTime} – ${slot.endTime}` : `vanaf ${slot.startTime}`}
+                </span>
+              )}
+              {slot.homeStartTime && slot.homeEndTime && (
+                <span className="text-xs font-medium text-blue-700">Thuis: {slot.homeStartTime} – {slot.homeEndTime}</span>
+              )}
             </span>
           )}
         </div>

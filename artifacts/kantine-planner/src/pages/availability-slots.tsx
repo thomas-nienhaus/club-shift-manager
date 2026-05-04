@@ -269,9 +269,15 @@ function ActiveBadge({ slot, onToggle }: { slot: AvailabilitySlot; onToggle: () 
   );
 }
 
+function hm(t: string | null): string | null {
+  return t ? t.slice(0, 5) : null;
+}
+
 function SlotTime({ slot }: { slot: AvailabilitySlot }) {
-  const away = slot.startTime && slot.endTime ? `${slot.startTime} – ${slot.endTime}` : slot.startTime ? `vanaf ${slot.startTime}` : null;
-  const home = slot.homeStartTime && slot.homeEndTime ? `${slot.homeStartTime} – ${slot.homeEndTime}` : null;
+  const s = hm(slot.startTime), e = hm(slot.endTime);
+  const hs = hm(slot.homeStartTime), he = hm(slot.homeEndTime);
+  const away = s && e ? `${s} – ${e}` : s ? `vanaf ${s}` : null;
+  const home = hs && he ? `${hs} – ${he}` : null;
   if (!away && !home) return <span>—</span>;
   if (away && home) return (
     <span className="flex flex-col gap-0.5 text-xs">
@@ -386,11 +392,11 @@ function SortableCard({
             <span className="flex flex-col gap-0.5">
               {slot.startTime && (
                 <span className="text-xs font-medium text-foreground">
-                  {slot.startTime && slot.endTime ? `Uit: ${slot.startTime} – ${slot.endTime}` : `vanaf ${slot.startTime}`}
+                  {slot.endTime ? `Uit: ${hm(slot.startTime)} – ${hm(slot.endTime)}` : `vanaf ${hm(slot.startTime)}`}
                 </span>
               )}
               {slot.homeStartTime && slot.homeEndTime && (
-                <span className="text-xs font-medium text-blue-700">Thuis: {slot.homeStartTime} – {slot.homeEndTime}</span>
+                <span className="text-xs font-medium text-blue-700">Thuis: {hm(slot.homeStartTime)} – {hm(slot.homeEndTime)}</span>
               )}
             </span>
           )}

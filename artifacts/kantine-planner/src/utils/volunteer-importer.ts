@@ -65,7 +65,24 @@ export async function importVolunteersFromExcel(file: File, slotLabels: { key: s
     const name = String(row[nameCol] ?? '').trim();
     if (!name) continue;
 
-    const email = emailCol >= 0 ? String(row[emailCol] ?? '').trim() || null : null;
+    // Reject Excel formula injection (leading =, +, -, @) and excessive length
+    if (name.length > 255 || /^[=+\-@]/.test(name)) {
+      errors.push(`Rij ${i + 1}: ongeldige naam "${name.slice(0, 30)}"`);
+      skipped++;
+      continue;
+    }
+
+    const rawEmail = emailCol >= 0 ? String(row[emailCol] ?? '').trim() || null : null;
+    const email = rawEmail;
+    if (email) {
+      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
+      if (!emailOk) {
+        errors.push(`Rij ${i + 1} (${name}): ongeldig e-mailadres "${email.slice(0, 50)}"`);
+        skipped++;
+        continue;
+      }
+    }
+
     const phone = phoneCol >= 0 ? String(row[phoneCol] ?? '').trim() || null : null;
     const availRaw = availCol >= 0 ? String(row[availCol] ?? '') : '';
     const availability = parseAvailability(availRaw);

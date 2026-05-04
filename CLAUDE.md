@@ -86,7 +86,7 @@ pnpm --filter @workspace/kantine-planner coverage
 
 **Date handling:** `date-fns` v3 with Dutch locale (`nl`) for all date formatting and parsing.
 
-**Production build:** Vite outputs to `artifacts/kantine-planner/dist/public/`. Railway serves via `vite preview`.
+**Production build:** Vite outputs to `artifacts/kantine-planner/dist/public/`. Deployed automatically to GitHub Pages via GitHub Actions (`.github/workflows/deploy.yml`) on push to `main`. `BASE_PATH` is set to `/club-shift-manager/` in the workflow.
 
 ## Environment Variables
 
@@ -100,7 +100,7 @@ Copy `.env.example` for local dev. The `VITE_` prefix exposes vars to the browse
 
 ## Supabase Setup
 
-1. Run migrations in order: `supabase/migrations/001_schema.sql` through `005_*.sql`
+1. Run migrations in order: `supabase/migrations/001_schema.sql` through `008_*.sql`
 2. Run `supabase/seed.sql` to insert default availability slots
 3. Create auth users via Supabase dashboard, then link them:
    ```sql

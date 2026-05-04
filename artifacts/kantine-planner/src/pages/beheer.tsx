@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link } from 'wouter';
+import { Link, useSearch } from 'wouter';
 import { format, addWeeks, subWeeks, startOfWeek, endOfWeek } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -28,14 +28,17 @@ function groupByDate(shifts: ShiftWithAssignments[]): Record<string, ShiftWithAs
 }
 
 export default function Beheer() {
+  const search = useSearch();
+  const seasonParam = new URLSearchParams(search).get('season');
+
   const [isAutoScheduleOpen, setIsAutoScheduleOpen] = useState(false);
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
   const [editShift, setEditShift] = useState<ShiftWithAssignments | null>(null);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [assignShift, setAssignShift] = useState<ShiftWithAssignments | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [filterMode, setFilterMode] = useState<FilterMode>('week');
-  const [seasonFilter, setSeasonFilter] = useState<number | null>(null);
+  const [filterMode, setFilterMode] = useState<FilterMode>(seasonParam ? 'all' : 'week');
+  const [seasonFilter, setSeasonFilter] = useState<number | null>(seasonParam ? Number(seasonParam) : null);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });

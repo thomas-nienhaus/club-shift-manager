@@ -10,6 +10,8 @@ import { AssignModal } from '@/components/shift/assign-modal';
 import { ShiftsGrid } from '@/components/shift/shifts-grid';
 import { useListShifts } from '@/hooks/use-shifts';
 import { useListSeasons } from '@/hooks/use-seasons';
+import { useSlots } from '@/hooks/use-slots';
+import { useListVolunteers } from '@/hooks/use-volunteers';
 import type { ShiftWithAssignments } from '@/lib/types';
 import {
   Shuffle, Plus, Calendar, Users, Clock,
@@ -39,6 +41,8 @@ export default function Beheer() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [filterMode, setFilterMode] = useState<FilterMode>(seasonParam ? 'all' : 'week');
   const [seasonFilter, setSeasonFilter] = useState<number | null>(seasonParam ? Number(seasonParam) : null);
+  const [slotFilter, setSlotFilter] = useState<string | null>(null);
+  const [volunteerFilter, setVolunteerFilter] = useState<number | null>(null);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -48,13 +52,17 @@ export default function Beheer() {
 
   const { data: shifts, isLoading } = useListShifts(screenParams);
   const { data: seasons } = useListSeasons();
+  const { slots } = useSlots();
+  const { data: volunteers } = useListVolunteers();
 
   const groupedShifts = useMemo(() => {
     if (!shifts) return {};
     let filtered = shifts;
-    if (seasonFilter) filtered = filtered.filter(s => s.seasonId === seasonFilter);
+    if (seasonFilter)    filtered = filtered.filter(s => s.seasonId === seasonFilter);
+    if (slotFilter)      filtered = filtered.filter(s => s.slot === slotFilter);
+    if (volunteerFilter) filtered = filtered.filter(s => s.assignments.some(a => a.volunteerId === volunteerFilter));
     return groupByDate(filtered);
-  }, [shifts, seasonFilter]);
+  }, [shifts, seasonFilter, slotFilter, volunteerFilter]);
 
   const handleOpenEdit = (shift: ShiftWithAssignments) => { setEditShift(shift); setIsShiftModalOpen(true); };
   const handleOpenCreate = () => { setEditShift(null); setIsShiftModalOpen(true); };
@@ -125,6 +133,30 @@ export default function Beheer() {
                     <option value="">Alle seizoenen</option>
                     {seasons.map(s => (
                       <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                )}
+                {slots.length > 0 && (
+                  <select
+                    value={slotFilter ?? ''}
+                    onChange={e => setSlotFilter(e.target.value || null)}
+                    className="px-3 py-2 rounded-xl font-bold text-sm border-2 border-border bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  >
+                    <option value="">Alle diensten</option>
+                    {slots.map(s => (
+                      <option key={s.key} value={s.key}>{s.label}</option>
+                    ))}
+                  </select>
+                )}
+                {volunteers && volunteers.length > 0 && (
+                  <select
+                    value={volunteerFilter ?? ''}
+                    onChange={e => setVolunteerFilter(e.target.value ? Number(e.target.value) : null)}
+                    className="px-3 py-2 rounded-xl font-bold text-sm border-2 border-border bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  >
+                    <option value="">Alle vrijwilligers</option>
+                    {volunteers.map(v => (
+                      <option key={v.id} value={v.id}>{v.name}</option>
                     ))}
                   </select>
                 )}

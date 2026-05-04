@@ -95,7 +95,7 @@ De keuze wordt opgeslagen in de browser (localStorage).
 | Onderdeel | Technologie |
 |---|---|
 | Frontend | React 19 SPA (Vite), TypeScript, Tailwind CSS v4 |
-| Hosting | Railway (`vite preview`) |
+| Hosting | GitHub Pages (automatisch gedeployd via GitHub Actions bij push naar `main`) |
 | Database | Supabase (PostgreSQL met Row Level Security) |
 | Authenticatie | Supabase Auth (e-mail + wachtwoord) |
 | Uitnodigingsmails | Supabase Edge Function + SMTP |

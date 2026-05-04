@@ -306,7 +306,6 @@ function SortableRow({
       </td>
       <td className="p-4 font-bold text-foreground">{slot.label}</td>
       <td className="p-4 text-sm text-muted-foreground">{DAY_LABELS[getDayFromKey(slot.key)] ?? '—'}</td>
-      <td className="p-4 font-mono text-sm text-muted-foreground">{slot.key}</td>
       <td className="p-4 text-sm text-muted-foreground">
         <SlotTime slot={slot} />
       </td>
@@ -383,7 +382,6 @@ function SortableCard({
       <div className="flex items-center justify-between gap-2 pl-6">
         <div className="flex flex-col gap-0.5 min-w-0">
           <span className="text-xs text-muted-foreground">{DAY_LABELS[getDayFromKey(slot.key)] ?? '—'}</span>
-          <span className="font-mono text-xs text-muted-foreground">{slot.key}</span>
           {(slot.startTime || slot.homeStartTime) && (
             <span className="flex flex-col gap-0.5">
               {slot.startTime && (
@@ -504,7 +502,6 @@ export default function AvailabilitySlotsPage() {
                       <th className="p-4 pl-6 w-8"></th>
                       <th className="p-4">Label</th>
                       <th className="p-4">Dag</th>
-                      <th className="p-4">Sleutel</th>
                       <th className="p-4">Tijd</th>
                       <th className="p-4 text-center">Actief</th>
                       <th className="p-4 text-center">Thuiswedstrijd</th>

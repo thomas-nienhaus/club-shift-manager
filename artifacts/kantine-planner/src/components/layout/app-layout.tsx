@@ -2,15 +2,18 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/contexts/auth-context';
 import { supabase } from '@/lib/supabase';
-import { CalendarDays, LogOut, Menu, X, ShieldAlert, Settings } from 'lucide-react';
+import { CalendarDays, LogOut, Menu, Palette, X, ShieldAlert, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTheme } from 'next-themes';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { user, isAdmin, volunteerId } = useAuth();
   const queryClient = useQueryClient();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const isSportTheme = theme === 'sport';
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -25,7 +28,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col md:flex-row">
+    <div className="main-content-bg min-h-screen bg-background flex flex-col md:flex-row">
       {/* Mobile Header */}
       <header className="md:hidden flex items-center justify-between p-4 bg-sidebar text-sidebar-foreground no-print sticky top-0 z-30 shadow-md">
         <div className="flex items-center gap-2">
@@ -44,12 +47,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         "fixed md:sticky top-0 left-0 h-screen w-72 bg-sidebar text-sidebar-foreground flex flex-col transition-transform duration-300 z-40 no-print shadow-2xl md:shadow-none",
         isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}>
-        <div className="p-6 hidden md:flex flex-col items-center gap-2 border-b border-white/10">
+        <div className="p-6 hidden md:flex flex-col items-center gap-2 border-b border-sidebar-foreground/10">
           <img src="https://dtohsihpvasoukshnmjl.supabase.co/storage/v1/object/public/public-assets/KCVO.png" alt="KCVO" className="h-20 w-auto object-contain" />
           <span className="font-display font-bold text-lg tracking-tight">Kantine Planner</span>
         </div>
 
-        <div className="p-6 flex flex-col gap-1 border-b border-white/10 bg-black/20 overflow-hidden">
+        <div className="p-6 flex flex-col gap-1 border-b border-sidebar-foreground/10 bg-sidebar-foreground/5 overflow-hidden">
           <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Ingelogd als</div>
           <div className="flex items-center gap-2 min-w-0">
             <div className="font-bold text-lg truncate min-w-0">{user?.volunteerName ?? user?.username}</div>
@@ -69,7 +72,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     "flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all cursor-pointer",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                      : "text-sidebar-foreground/70 hover:bg-white/10 hover:text-white"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                   )}
                 >
                   <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-sidebar-foreground/50")} />
@@ -80,7 +83,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div className="p-4 border-t border-white/10">
+        <div className="p-4 border-t border-sidebar-foreground/10 space-y-1">
+          <button
+            onClick={() => setTheme(isSportTheme ? 'default' : 'sport')}
+            className="flex items-center gap-3 px-4 py-3 w-full rounded-xl font-bold text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-all"
+          >
+            <Palette className="w-5 h-5" />
+            {isSportTheme ? 'Standaard thema' : 'Sport thema'}
+          </button>
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-3 w-full rounded-xl font-bold text-sidebar-foreground/70 hover:bg-destructive/20 hover:text-destructive transition-all"

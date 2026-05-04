@@ -67,6 +67,39 @@
   --sidebar-accent: 0 0% 22%;
 }
 
+/* Sport thema — licht teal/lavendel design */
+[data-theme="sport"] {
+  --background: 177 40% 96%;
+  --foreground: 210 35% 15%;
+  --card: 0 0% 100%;
+  --card-foreground: 210 35% 15%;
+  --primary: 174 72% 38%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 215 25% 27%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 177 30% 92%;
+  --muted-foreground: 215 18% 48%;
+  --accent: 174 72% 38%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 177 25% 86%;
+  --input: 177 25% 86%;
+  --ring: 174 72% 38%;
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 210 35% 20%;
+  --sidebar-accent: 174 40% 92%;
+}
+
+[data-theme="sport"] body {
+  background: linear-gradient(135deg, hsl(177, 45%, 91%) 0%, hsl(235, 35%, 92%) 100%) fixed;
+  min-height: 100vh;
+}
+
+[data-theme="sport"] .main-content-bg {
+  background: transparent;
+}
+
 @layer base {
   body {
     @apply bg-background text-foreground antialiased font-sans;

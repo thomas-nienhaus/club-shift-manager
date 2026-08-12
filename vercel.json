@@ -1,0 +1,6 @@
+{
+  "buildCommand": "pnpm --filter @workspace/kantine-planner build",
+  "outputDirectory": "artifacts/kantine-planner/dist/public",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}

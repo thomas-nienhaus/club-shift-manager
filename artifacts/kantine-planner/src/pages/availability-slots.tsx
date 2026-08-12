@@ -256,7 +256,7 @@ function SortableRow({
       <td className="p-4 pr-6 text-right space-x-2">
         <button
           onClick={onEdit}
-          className="p-2 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+          className="p-2 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
           title="Bewerken"
         >
           <Edit2 className="w-5 h-5" />
@@ -264,7 +264,7 @@ function SortableRow({
         <button
           onClick={onDelete}
           disabled={isDeleting}
-          className="p-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+          className="p-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
           title="Verwijderen"
         >
           <Trash2 className="w-5 h-5" />

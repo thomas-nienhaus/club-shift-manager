@@ -23,6 +23,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const beheerPaths = ['/beheer', '/seasons', '/volunteers', '/availability-slots'];
   const isBeheerSection = beheerPaths.includes(location);
+  const [isBeheerOpen, setIsBeheerOpen] = useState(isBeheerSection);
 
   const navItems = [
     { href: '/', label: 'Planning', icon: CalendarDays, show: true },
@@ -94,19 +95,22 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           {isAdmin && (
             <div>
               {/* Beheer parent */}
-              <div className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all",
-                isBeheerSection
-                  ? "text-primary"
-                  : "text-sidebar-foreground/70"
-              )}>
+              <div
+                onClick={() => setIsBeheerOpen(!isBeheerOpen)}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all cursor-pointer",
+                  isBeheerSection
+                    ? "text-primary hover:bg-sidebar-accent"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                )}
+              >
                 <ShieldAlert className={cn("w-5 h-5", isBeheerSection ? "text-primary" : "text-sidebar-foreground/50")} />
                 Beheer
-                <ChevronDown className="w-4 h-4 ml-auto" />
+                <ChevronDown className={cn("w-4 h-4 ml-auto transition-transform", isBeheerOpen ? "rotate-180" : "")} />
               </div>
 
               {/* Sub-items */}
-              <div className="ml-3 pl-3 border-l border-sidebar-foreground/15 space-y-1 mt-1">
+              {isBeheerOpen && <div className="ml-3 pl-3 border-l border-sidebar-foreground/15 space-y-1 mt-1">
                 {beheerSubItems.map((item) => {
                   const isActive = location === item.href;
                   return (
@@ -126,7 +130,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     </Link>
                   );
                 })}
-              </div>
+              </div>}
             </div>
           )}
         </nav>

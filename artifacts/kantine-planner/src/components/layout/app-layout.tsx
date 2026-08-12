@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/contexts/auth-context';
 import { supabase } from '@/lib/supabase';
-import { CalendarDays, LogOut, Menu, Palette, X, ShieldAlert, Settings } from 'lucide-react';
+import { CalendarDays, LogOut, Menu, Palette, X, ShieldAlert, Settings, Users, Calendar, Clock, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTheme } from 'next-themes';
@@ -21,10 +21,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     window.location.href = `${import.meta.env.BASE_URL}login`;
   };
 
+  const beheerPaths = ['/beheer', '/seasons', '/volunteers', '/availability-slots'];
+  const isBeheerSection = beheerPaths.includes(location);
+
   const navItems = [
     { href: '/', label: 'Planning', icon: CalendarDays, show: true },
-    { href: '/beheer', label: 'Beheer', icon: ShieldAlert, show: isAdmin },
     { href: '/settings', label: 'Instellingen', icon: Settings, show: !!volunteerId },
+  ];
+
+  const beheerSubItems = [
+    { href: '/beheer', label: 'Overzicht', icon: ShieldAlert },
+    { href: '/seasons', label: 'Seizoenen', icon: Calendar },
+    { href: '/volunteers', label: 'Vrijwilligers', icon: Users },
+    { href: '/availability-slots', label: 'Diensten', icon: Clock },
   ];
 
   return (
@@ -61,7 +70,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="text-xs text-sidebar-foreground/50 truncate" title={user?.username}>{user?.username}</div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {navItems.filter(item => item.show).map((item) => {
             const isActive = location === item.href;
             return (
@@ -81,6 +90,45 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
+
+          {isAdmin && (
+            <div>
+              {/* Beheer parent */}
+              <div className={cn(
+                "flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all",
+                isBeheerSection
+                  ? "text-primary"
+                  : "text-sidebar-foreground/70"
+              )}>
+                <ShieldAlert className={cn("w-5 h-5", isBeheerSection ? "text-primary" : "text-sidebar-foreground/50")} />
+                Beheer
+                <ChevronDown className="w-4 h-4 ml-auto" />
+              </div>
+
+              {/* Sub-items */}
+              <div className="ml-3 pl-3 border-l border-sidebar-foreground/15 space-y-1 mt-1">
+                {beheerSubItems.map((item) => {
+                  const isActive = location === item.href;
+                  return (
+                    <Link key={item.href} href={item.href}>
+                      <div
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 px-3 py-2.5 rounded-lg font-semibold text-sm transition-all cursor-pointer",
+                          isActive
+                            ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                            : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                        )}
+                      >
+                        <item.icon className={cn("w-4 h-4", isActive ? "text-white" : "text-sidebar-foreground/40")} />
+                        {item.label}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </nav>
 
         <div className="p-4 border-t border-sidebar-foreground/10 space-y-1">

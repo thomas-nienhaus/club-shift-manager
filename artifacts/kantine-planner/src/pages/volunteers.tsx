@@ -199,7 +199,7 @@ export default function Volunteers() {
                           <button
                             onClick={() => handleIcalDownload(vol)}
                             title={`Agenda downloaden voor ${vol.name}`}
-                            className="inline-flex p-2 rounded-lg text-muted-foreground hover:bg-emerald-50 hover:text-emerald-600 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                            className="inline-flex p-2 rounded-lg text-muted-foreground hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
                           >
                             <CalendarDays className="w-5 h-5" />
                           </button>
@@ -208,21 +208,21 @@ export default function Volunteers() {
                               onClick={() => handleInvite(vol)}
                               disabled={invitingId === vol.id}
                               title={`Uitnodiging sturen naar ${vol.name}`}
-                              className="inline-flex p-2 rounded-lg text-muted-foreground hover:bg-blue-50 hover:text-blue-600 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 disabled:opacity-50"
+                              className="inline-flex p-2 rounded-lg text-muted-foreground hover:bg-blue-50 hover:text-blue-600 transition-colors disabled:opacity-50"
                             >
                               <Send className="w-5 h-5" />
                             </button>
                           )}
                           <button
                             onClick={() => handleEdit(vol)}
-                            className="p-2 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                            className="p-2 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
                           >
                             <Edit2 className="w-5 h-5" />
                           </button>
                           <button
                             onClick={() => handleDelete(vol.id, vol.name)}
                             disabled={isDeleting}
-                            className="p-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                            className="p-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                           >
                             <Trash2 className="w-5 h-5" />
                           </button>

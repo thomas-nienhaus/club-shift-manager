@@ -65,8 +65,8 @@ export default function Login() {
 
           {!showForgot ? (
             <>
-              <h1 className="text-3xl font-display font-extrabold text-sidebar mb-2">Kantine Planner</h1>
-              <p className="text-sidebar/70 mb-8">Log in om het rooster te bekijken.</p>
+              <h1 className="text-3xl font-display font-extrabold text-foreground mb-2">Kantine Planner</h1>
+              <p className="text-foreground/70 mb-8">Log in om het rooster te bekijken.</p>
 
               <form onSubmit={handleSubmit} className="space-y-5 text-left">
                 {error && (
@@ -76,16 +76,16 @@ export default function Login() {
                 )}
 
                 <div>
-                  <label className="block text-sm font-bold text-sidebar mb-2">E-mailadres</label>
+                  <label className="block text-sm font-bold text-foreground mb-2">E-mailadres</label>
                   <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-sidebar/40 w-5 h-5" />
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/40 w-5 h-5" />
                     <input
                       type="email"
                       required
                       autoFocus
                       value={email}
                       onChange={e => setEmail(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-white/50 border-2 border-sidebar/10 rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all text-sidebar font-semibold"
+                      className="w-full pl-11 pr-4 py-3 bg-white/50 border-2 border-foreground/10 rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all text-foreground font-semibold"
                       placeholder="naam@voorbeeld.nl"
                     />
                   </div>
@@ -93,7 +93,7 @@ export default function Login() {
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-bold text-sidebar">Wachtwoord</label>
+                    <label className="block text-sm font-bold text-foreground">Wachtwoord</label>
                     <button
                       type="button"
                       onClick={() => { setShowForgot(true); setForgotEmail(email); }}
@@ -103,19 +103,19 @@ export default function Login() {
                     </button>
                   </div>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-sidebar/40 w-5 h-5" />
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/40 w-5 h-5" />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       required
                       value={password}
                       onChange={e => setPassword(e.target.value)}
-                      className="w-full pl-11 pr-12 py-3 bg-white/50 border-2 border-sidebar/10 rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all text-sidebar font-semibold"
+                      className="w-full pl-11 pr-12 py-3 bg-white/50 border-2 border-foreground/10 rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all text-foreground font-semibold"
                       placeholder="••••••••"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(v => !v)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-sidebar/40 hover:text-sidebar/70 transition-colors"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground/70 transition-colors"
                       tabIndex={-1}
                     >
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -126,7 +126,7 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="w-full py-4 rounded-xl font-bold text-lg bg-sidebar text-white shadow-lg shadow-black/30 hover:shadow-xl hover:shadow-black/40 hover:-translate-y-1 transition-all duration-200 mt-4 disabled:opacity-50 disabled:pointer-events-none"
+                  className="w-full py-4 rounded-xl font-bold text-lg bg-foreground text-background shadow-lg shadow-black/30 hover:shadow-xl hover:shadow-black/40 hover:-translate-y-1 transition-all duration-200 mt-4 disabled:opacity-50 disabled:pointer-events-none"
                 >
                   {isPending ? 'Inloggen...' : 'Inloggen'}
                 </button>
@@ -134,8 +134,8 @@ export default function Login() {
             </>
           ) : (
             <>
-              <h1 className="text-3xl font-display font-extrabold text-sidebar mb-2">Wachtwoord vergeten</h1>
-              <p className="text-sidebar/70 mb-8">Vul je e-mailadres in en we sturen je een reset-link.</p>
+              <h1 className="text-3xl font-display font-extrabold text-foreground mb-2">Wachtwoord vergeten</h1>
+              <p className="text-foreground/70 mb-8">Vul je e-mailadres in en we sturen je een reset-link.</p>
 
               {forgotSent ? (
                 <div className="space-y-5">
@@ -145,7 +145,7 @@ export default function Login() {
                   <button
                     type="button"
                     onClick={() => { setShowForgot(false); setForgotSent(false); }}
-                    className="flex items-center gap-2 mx-auto text-sm font-semibold text-sidebar/60 hover:text-sidebar transition-colors"
+                    className="flex items-center gap-2 mx-auto text-sm font-semibold text-foreground/60 hover:text-foreground transition-colors"
                   >
                     <ArrowLeft className="w-4 h-4" /> Terug naar inloggen
                   </button>
@@ -153,16 +153,16 @@ export default function Login() {
               ) : (
                 <form onSubmit={handleForgot} className="space-y-5 text-left">
                   <div>
-                    <label className="block text-sm font-bold text-sidebar mb-2">E-mailadres</label>
+                    <label className="block text-sm font-bold text-foreground mb-2">E-mailadres</label>
                     <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-sidebar/40 w-5 h-5" />
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/40 w-5 h-5" />
                       <input
                         type="email"
                         required
                         autoFocus
                         value={forgotEmail}
                         onChange={e => setForgotEmail(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 bg-white/50 border-2 border-sidebar/10 rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all text-sidebar font-semibold"
+                        className="w-full pl-11 pr-4 py-3 bg-white/50 border-2 border-foreground/10 rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all text-foreground font-semibold"
                         placeholder="naam@voorbeeld.nl"
                       />
                     </div>
@@ -179,7 +179,7 @@ export default function Login() {
                   <button
                     type="button"
                     onClick={() => setShowForgot(false)}
-                    className="flex items-center gap-2 mx-auto text-sm font-semibold text-sidebar/60 hover:text-sidebar transition-colors"
+                    className="flex items-center gap-2 mx-auto text-sm font-semibold text-foreground/60 hover:text-foreground transition-colors"
                   >
                     <ArrowLeft className="w-4 h-4" /> Terug naar inloggen
                   </button>

@@ -195,7 +195,7 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
               type="button"
               onClick={handleInvite}
               disabled={isInviting || isPending}
-              className="mt-2 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border-2 border-primary/30 text-primary hover:bg-primary/5 hover:border-primary transition-all disabled:opacity-50 disabled:pointer-events-none"
+              className="mt-2 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border border-primary/30 text-primary hover:bg-primary/5 hover:border-primary transition-all disabled:opacity-50 disabled:pointer-events-none"
             >
               <Send className="w-3.5 h-3.5" />
               {isInviting ? 'Bezig...' : 'Uitnodiging versturen'}
@@ -226,12 +226,12 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
             return (
               <>
                 <label
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all ${
                     adminDisabled
-                      ? 'border-border bg-muted opacity-50 cursor-not-allowed'
+                      ? 'border-border/60 bg-muted opacity-50 cursor-not-allowed'
                       : isAdmin
                         ? 'border-primary bg-primary/10 cursor-pointer'
-                        : 'border-border bg-white hover:border-primary/30 cursor-pointer'
+                        : 'border-border/60 bg-card hover:border-primary/30 cursor-pointer'
                   }`}
                 >
                   <input
@@ -285,10 +285,10 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
                   key={slot.key}
                   type="button"
                   onClick={() => toggleSlot(slot.key)}
-                  className={`px-3 py-2 rounded-xl text-sm font-semibold border-2 text-left transition-all ${
+                  className={`px-3 py-2 rounded-full text-sm font-semibold border text-left transition-all ${
                     checked
                       ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border bg-white text-muted-foreground hover:border-primary/40'
+                      : 'border-border/60 bg-card text-muted-foreground hover:border-primary/40'
                   }`}
                 >
                   {slot.label}
@@ -318,7 +318,7 @@ export function VolunteerDialog({ isOpen, onClose, editVolunteer }: VolunteerDia
           {otherVolunteers.length === 0 ? (
             <p className="text-xs text-muted-foreground">Geen andere vrijwilligers beschikbaar.</p>
           ) : (
-            <div className="max-h-48 overflow-y-auto rounded-xl border-2 border-border divide-y divide-border">
+            <div className="max-h-48 overflow-y-auto rounded-2xl border border-border/60 divide-y divide-border/60">
               {otherVolunteers.map(v => {
                 const checked = groupMemberIds.includes(v.id);
                 const disabled = !checked && spotsLeft === 0;

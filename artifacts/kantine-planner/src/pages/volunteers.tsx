@@ -89,7 +89,7 @@ export default function Volunteers() {
       <AppLayout>
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
           <div>
-            <h1 className="text-4xl font-display font-extrabold mb-2">Vrijwilligers</h1>
+            <h1 className="text-4xl font-display font-bold mb-2">Vrijwilligers</h1>
             <p className="text-muted-foreground text-lg">Beheer de database van kantine vrijwilligers.</p>
           </div>
           <div className="flex items-center gap-2">
@@ -102,7 +102,7 @@ export default function Volunteers() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border-2 border-border shadow-sm overflow-hidden flex flex-col">
+        <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden flex flex-col">
           {/* Search bar */}
           <div className="p-4 border-b border-border bg-muted/30">
             <div className="relative max-w-md">
@@ -112,7 +112,7 @@ export default function Volunteers() {
                 placeholder="Zoek op naam of email..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-border bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+                className="w-full pl-10 pr-4 py-3 rounded-full border border-border/60 bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
               />
             </div>
           </div>

@@ -65,7 +65,7 @@ export default function Login() {
 
           {!showForgot ? (
             <>
-              <h1 className="text-3xl font-display font-extrabold text-foreground mb-2">Kantine Planner</h1>
+              <h1 className="text-3xl font-display font-bold text-foreground mb-2">Kantine Planner</h1>
               <p className="text-foreground/70 mb-8">Log in om het rooster te bekijken.</p>
 
               <form onSubmit={handleSubmit} className="space-y-5 text-left">
@@ -85,7 +85,7 @@ export default function Login() {
                       autoFocus
                       value={email}
                       onChange={e => setEmail(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 bg-white/50 border-2 border-foreground/10 rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all text-foreground font-semibold"
+                      className="w-full pl-11 pr-4 py-3 bg-white/50 border border-foreground/10 rounded-2xl focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all text-foreground font-semibold"
                       placeholder="naam@voorbeeld.nl"
                     />
                   </div>
@@ -109,7 +109,7 @@ export default function Login() {
                       required
                       value={password}
                       onChange={e => setPassword(e.target.value)}
-                      className="w-full pl-11 pr-12 py-3 bg-white/50 border-2 border-foreground/10 rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all text-foreground font-semibold"
+                      className="w-full pl-11 pr-12 py-3 bg-white/50 border border-foreground/10 rounded-2xl focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all text-foreground font-semibold"
                       placeholder="••••••••"
                     />
                     <button
@@ -126,7 +126,7 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="w-full py-4 rounded-xl font-bold text-lg bg-foreground text-background shadow-lg shadow-black/30 hover:shadow-xl hover:shadow-black/40 hover:-translate-y-1 transition-all duration-200 mt-4 disabled:opacity-50 disabled:pointer-events-none"
+                  className="w-full py-3.5 rounded-full font-semibold text-base bg-foreground text-background shadow-md shadow-black/20 hover:shadow-lg hover:shadow-black/25 hover:-translate-y-px transition-all duration-200 mt-4 disabled:opacity-50 disabled:pointer-events-none"
                 >
                   {isPending ? 'Inloggen...' : 'Inloggen'}
                 </button>
@@ -134,7 +134,7 @@ export default function Login() {
             </>
           ) : (
             <>
-              <h1 className="text-3xl font-display font-extrabold text-foreground mb-2">Wachtwoord vergeten</h1>
+              <h1 className="text-3xl font-display font-bold text-foreground mb-2">Wachtwoord vergeten</h1>
               <p className="text-foreground/70 mb-8">Vul je e-mailadres in en we sturen je een reset-link.</p>
 
               {forgotSent ? (
@@ -162,7 +162,7 @@ export default function Login() {
                         autoFocus
                         value={forgotEmail}
                         onChange={e => setForgotEmail(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 bg-white/50 border-2 border-foreground/10 rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all text-foreground font-semibold"
+                        className="w-full pl-11 pr-4 py-3 bg-white/50 border border-foreground/10 rounded-2xl focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all text-foreground font-semibold"
                         placeholder="naam@voorbeeld.nl"
                       />
                     </div>
@@ -171,7 +171,7 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={isPending}
-                    className="w-full py-4 rounded-xl font-bold text-lg bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-1 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
+                    className="w-full py-3.5 rounded-full font-semibold text-base bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/25 hover:-translate-y-px transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
                   >
                     {isPending ? 'Bezig...' : 'Reset-link versturen'}
                   </button>

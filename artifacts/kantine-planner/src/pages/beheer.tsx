@@ -73,7 +73,7 @@ export default function Beheer() {
       <AppLayout>
         <div className="flex flex-col gap-10">
           <div>
-            <h1 className="text-4xl font-display font-extrabold mb-2">Beheer</h1>
+            <h1 className="text-4xl font-display font-bold mb-2">Beheer</h1>
             <p className="text-muted-foreground text-lg">Beheer diensten, vrijwilligers en instellingen.</p>
           </div>
 
@@ -82,21 +82,21 @@ export default function Beheer() {
             <h2 className="text-xl font-bold mb-4">Overzichten</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Link href="/seasons">
-                <div className="bg-white rounded-2xl border-2 border-border p-6 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer">
+                <div className="bg-card rounded-2xl border border-border/60 p-6 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer">
                   <Calendar className="w-8 h-8 text-primary mb-3" />
                   <h3 className="font-bold text-lg mb-1">Seizoenen</h3>
                   <p className="text-sm text-muted-foreground">Beheer seizoenen en importeer diensten.</p>
                 </div>
               </Link>
               <Link href="/volunteers">
-                <div className="bg-white rounded-2xl border-2 border-border p-6 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer">
+                <div className="bg-card rounded-2xl border border-border/60 p-6 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer">
                   <Users className="w-8 h-8 text-primary mb-3" />
                   <h3 className="font-bold text-lg mb-1">Vrijwilligers</h3>
                   <p className="text-sm text-muted-foreground">Beheer vrijwilligers en beschikbaarheid.</p>
                 </div>
               </Link>
               <Link href="/availability-slots">
-                <div className="bg-white rounded-2xl border-2 border-border p-6 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer">
+                <div className="bg-card rounded-2xl border border-border/60 p-6 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer">
                   <Clock className="w-8 h-8 text-primary mb-3" />
                   <h3 className="font-bold text-lg mb-1">Diensten</h3>
                   <p className="text-sm text-muted-foreground">Beheer de beschikbare tijdslots voor diensten.</p>
@@ -128,7 +128,7 @@ export default function Beheer() {
                   <select
                     value={seasonFilter ?? ''}
                     onChange={e => setSeasonFilter(e.target.value ? Number(e.target.value) : null)}
-                    className="px-3 py-2 rounded-xl font-bold text-sm border-2 border-border bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    className="px-3 py-2 rounded-full font-semibold text-sm border border-border/60 bg-card focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   >
                     <option value="">Alle seizoenen</option>
                     {seasons.map(s => (
@@ -173,10 +173,10 @@ export default function Beheer() {
             </div>
 
             {filterMode === 'week' && (
-              <div className="flex items-center justify-between bg-white p-4 rounded-2xl border-2 border-border mb-8 shadow-sm">
+              <div className="flex items-center justify-between bg-card p-4 rounded-2xl border border-border/60 mb-8 shadow-sm">
                 <button
                   onClick={() => setCurrentDate(subWeeks(currentDate, 1))}
-                  className="p-2 rounded-xl hover:bg-muted transition-colors flex items-center gap-1 font-bold text-muted-foreground hover:text-foreground"
+                  className="p-2 rounded-full hover:bg-muted transition-colors flex items-center gap-1 font-semibold text-muted-foreground hover:text-foreground"
                 >
                   <ChevronLeft className="w-5 h-5" /> Vorige
                 </button>
@@ -185,7 +185,7 @@ export default function Beheer() {
                 </h3>
                 <button
                   onClick={() => setCurrentDate(addWeeks(currentDate, 1))}
-                  className="p-2 rounded-xl hover:bg-muted transition-colors flex items-center gap-1 font-bold text-muted-foreground hover:text-foreground"
+                  className="p-2 rounded-full hover:bg-muted transition-colors flex items-center gap-1 font-semibold text-muted-foreground hover:text-foreground"
                 >
                   Volgende <ChevronRight className="w-5 h-5" />
                 </button>

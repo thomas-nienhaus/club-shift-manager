@@ -2,18 +2,15 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/contexts/auth-context';
 import { supabase } from '@/lib/supabase';
-import { CalendarDays, LogOut, Menu, Palette, X, ShieldAlert, Settings, Users, Calendar, Clock, ChevronDown } from 'lucide-react';
+import { CalendarDays, LogOut, Menu, X, ShieldAlert, Settings, Users, Calendar, Clock, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTheme } from 'next-themes';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { user, isAdmin, volunteerId } = useAuth();
   const queryClient = useQueryClient();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { theme, setTheme } = useTheme();
-  const isSportTheme = theme === 'sport';
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -136,13 +133,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="p-4 border-t border-sidebar-foreground/10 space-y-1">
-          <button
-            onClick={() => setTheme(isSportTheme ? 'default' : 'sport')}
-            className="flex items-center gap-3 px-4 py-3 w-full rounded-xl font-bold text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-all"
-          >
-            <Palette className="w-5 h-5" />
-            {isSportTheme ? 'Standaard thema' : 'Sport thema'}
-          </button>
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-3 w-full rounded-xl font-bold text-sidebar-foreground/70 hover:bg-destructive/20 hover:text-destructive transition-all"

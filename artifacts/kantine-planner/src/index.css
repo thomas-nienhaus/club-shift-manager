@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: 'DM Sans', sans-serif;
-  --font-display: 'Outfit', sans-serif;
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'Inter', sans-serif;
 
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -22,7 +22,7 @@
   --color-ring: hsl(var(--ring));
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
-  
+
   --color-sidebar: hsl(var(--sidebar));
   --color-sidebar-foreground: hsl(var(--sidebar-foreground));
   --color-sidebar-border: hsl(var(--border));
@@ -35,69 +35,36 @@
 }
 
 :root {
-  --background: 0 0% 98%;
-  --foreground: 0 0% 10%;
+  /* Calm / Kit palette */
+  --background: 35 36% 93%;         /* Ivory  #F4EFE8 */
+  --foreground: 130 18% 16%;        /* Deep forest */
 
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 10%;
+  --card: 35 30% 97%;               /* Warm near-white */
+  --card-foreground: 130 18% 16%;
 
-  /* Grasgroen als primaire kleur */
-  --primary: 142 71% 40%;
+  --primary: 129 9% 45%;            /* Sage   #6B7F6E */
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 0 0% 20%;
-  --secondary-foreground: 0 0% 100%;
+  --secondary: 120 11% 69%;         /* Moss   #A7B8A7 */
+  --secondary-foreground: 130 18% 16%;
 
-  --muted: 0 0% 94%;
-  --muted-foreground: 0 0% 42%;
+  --muted: 120 10% 86%;             /* Mist   #D9E1D9 */
+  --muted-foreground: 130 8% 44%;
 
-  --accent: 142 71% 40%;
+  --accent: 129 9% 45%;             /* Sage */
   --accent-foreground: 0 0% 100%;
 
-  --destructive: 0 84% 60%;
+  --destructive: 0 68% 52%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 0 0% 88%;
-  --input: 0 0% 88%;
-  --ring: 142 71% 40%;
+  --border: 32 14% 80%;             /* Sand-toned */
+  --input: 32 14% 80%;
+  --ring: 129 9% 45%;
 
-  /* Zwarte sidebar passend bij KCVO */
-  --sidebar: 0 0% 8%;
-  --sidebar-foreground: 0 0% 100%;
-  --sidebar-accent: 0 0% 22%;
-}
-
-/* Sport thema — licht teal/lavendel design */
-[data-theme="sport"] {
-  --background: 177 40% 96%;
-  --foreground: 210 35% 15%;
-  --card: 0 0% 100%;
-  --card-foreground: 210 35% 15%;
-  --primary: 174 72% 38%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 215 25% 27%;
-  --secondary-foreground: 0 0% 100%;
-  --muted: 177 30% 92%;
-  --muted-foreground: 215 18% 48%;
-  --accent: 174 72% 38%;
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 177 25% 86%;
-  --input: 177 25% 86%;
-  --ring: 174 72% 38%;
-  --sidebar: 0 0% 100%;
-  --sidebar-foreground: 210 35% 20%;
-  --sidebar-accent: 174 40% 92%;
-}
-
-[data-theme="sport"] body {
-  background: linear-gradient(135deg, hsl(177, 45%, 91%) 0%, hsl(235, 35%, 92%) 100%) fixed;
-  min-height: 100vh;
-}
-
-[data-theme="sport"] .main-content-bg {
-  background: transparent;
+  /* Sidebar — deep forest green */
+  --sidebar: 130 16% 15%;
+  --sidebar-foreground: 120 12% 88%;
+  --sidebar-accent: 130 12% 22%;
 }
 
 @layer base {
@@ -113,22 +80,22 @@
 
 @layer utilities {
   .glass-panel {
-    @apply bg-white/80 backdrop-blur-xl border border-white/40 shadow-xl shadow-black/5;
+    @apply bg-card/85 backdrop-blur-xl border border-border/60 shadow-xl shadow-black/6;
   }
   .input-field {
-    @apply w-full px-4 py-3 bg-white border-2 border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/15 transition-all duration-200;
+    @apply w-full px-4 py-3 bg-card border border-border rounded-2xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/15 transition-all duration-200;
   }
   .label-text {
-    @apply block text-sm font-bold text-foreground mb-2;
+    @apply block text-sm font-semibold text-foreground mb-2;
   }
   .btn-primary {
-    @apply px-6 py-3 rounded-xl font-bold bg-primary text-primary-foreground shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none;
+    @apply px-6 py-2.5 rounded-full font-semibold bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/25 hover:-translate-y-px active:translate-y-0 active:shadow-sm transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none;
   }
   .btn-secondary {
-    @apply px-6 py-3 rounded-xl font-bold bg-white border-2 border-border text-foreground hover:border-primary hover:bg-primary/5 active:bg-primary/10 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none;
+    @apply px-6 py-2.5 rounded-full font-semibold bg-card border border-border text-foreground hover:border-primary/60 hover:bg-primary/5 active:bg-primary/10 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none;
   }
   .btn-danger {
-    @apply px-6 py-3 rounded-xl font-bold bg-destructive text-destructive-foreground shadow-lg shadow-destructive/30 hover:shadow-xl hover:shadow-destructive/40 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none;
+    @apply px-6 py-2.5 rounded-full font-semibold bg-destructive text-destructive-foreground shadow-md shadow-destructive/20 hover:shadow-lg hover:shadow-destructive/25 hover:-translate-y-px active:translate-y-0 active:shadow-sm transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none;
   }
 }
 

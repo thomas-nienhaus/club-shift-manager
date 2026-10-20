@@ -127,7 +127,7 @@ export function AssignModal({ isOpen, onClose, shift }: AssignModalProps) {
         )}
 
         {unassignedGroupMembers.length > 0 && (
-          <div className="p-4 bg-primary/5 border-2 border-primary/20 rounded-xl space-y-3">
+          <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl space-y-3">
             <div className="flex items-center gap-2 text-sm font-semibold text-primary">
               <Users className="w-4 h-4" />Groep van {selectedVolunteer!.groupMembers!.length + 1} — ook indelen?
             </div>

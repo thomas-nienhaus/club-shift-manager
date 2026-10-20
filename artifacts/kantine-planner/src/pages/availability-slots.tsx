@@ -510,8 +510,8 @@ export default function AvailabilitySlotsPage() {
       <AppLayout>
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
           <div>
-            <h1 className="text-4xl font-display font-extrabold mb-2">Diensten</h1>
-            <p className="text-muted-foreground text-lg">Beheer de beschikbare diensten voor diensten en beschikbaarheid.</p>
+            <h1 className="text-4xl font-display font-bold mb-2">Dagdelen</h1>
+            <p className="text-muted-foreground text-lg">Beheer de beschikbare dagdelen voor diensten en beschikbaarheid.</p>
           </div>
           <button
             onClick={() => { setEditSlot(null); setIsModalOpen(true); }}
@@ -521,7 +521,7 @@ export default function AvailabilitySlotsPage() {
           </button>
         </div>
 
-        <div className="bg-white rounded-2xl border-2 border-border shadow-sm overflow-hidden">
+        <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
           {isLoading ? (
             <div className="p-12 text-center text-muted-foreground font-bold animate-pulse">Laden...</div>
           ) : localOrder.length === 0 ? (

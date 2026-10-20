@@ -373,9 +373,9 @@ export default function Dashboard() {
       <AppLayout>
         {/* ── Volunteer welcome banner ── */}
         {myVolunteerId && !icalDismissed && (
-          <div className="bg-primary/10 border-2 border-primary/20 rounded-2xl mb-6 no-print overflow-hidden">
+          <div className="bg-primary/10 border border-primary/20 rounded-2xl mb-6 no-print overflow-hidden">
             <div className="flex items-center gap-4 px-5 py-4">
-              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
                 <User className="w-5 h-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
@@ -386,7 +386,7 @@ export default function Dashboard() {
                 {icalStreamWebcalUrl && (
                   <button
                     onClick={() => setIcalStreamOpen(o => !o)}
-                    className={cn("flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-colors", icalStreamOpen ? "bg-primary text-primary-foreground" : "bg-primary/20 hover:bg-primary/30 text-primary")}
+                    className={cn("flex items-center gap-2 px-4 py-2 rounded-full font-semibold text-sm transition-colors", icalStreamOpen ? "bg-primary text-primary-foreground" : "bg-primary/20 hover:bg-primary/30 text-primary")}
                     title="Abonneer op jouw agenda-stream"
                   >
                     <Rss className="w-4 h-4" />
@@ -395,7 +395,7 @@ export default function Dashboard() {
                 )}
                 <button
                   onClick={handleIcalDownload}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/20 hover:bg-primary/30 text-primary font-semibold text-sm transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/20 hover:bg-primary/30 text-primary font-semibold text-sm transition-colors"
                   title="Download jouw diensten als agenda-bestand"
                 >
                   <Download className="w-4 h-4" />
@@ -412,7 +412,7 @@ export default function Dashboard() {
             </div>
 
             {icalStreamOpen && icalStreamHttpUrl && icalStreamWebcalUrl && (
-              <div className="border-t-2 border-primary/20 px-5 py-4 bg-white/60">
+              <div className="border-t border-primary/20 px-5 py-4 bg-card/60">
                 <p className="text-sm font-bold text-foreground mb-1">Agenda-abonnement</p>
                 <p className="text-xs text-muted-foreground mb-3">
                   Voeg de URL hieronder toe in Google Calendar, Apple Agenda of Outlook. Nieuwe diensten verschijnen dan automatisch.
@@ -421,12 +421,12 @@ export default function Dashboard() {
                   <input
                     readOnly
                     value={icalStreamHttpUrl}
-                    className="flex-1 px-3 py-2 text-xs font-mono bg-white border-2 border-border rounded-xl text-foreground focus:outline-none focus:border-primary"
+                    className="flex-1 px-3 py-2 text-xs font-mono bg-card border border-border/60 rounded-2xl text-foreground focus:outline-none focus:border-primary"
                     onFocus={e => e.target.select()}
                   />
                   <button
                     onClick={handleCopyIcalUrl}
-                    className={cn("flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-sm transition-colors shrink-0", icalCopied ? "bg-green-100 text-green-700" : "bg-primary/10 hover:bg-primary/20 text-primary")}
+                    className={cn("flex items-center gap-1.5 px-3 py-2 rounded-full font-semibold text-sm transition-colors shrink-0", icalCopied ? "bg-green-100 text-green-700" : "bg-primary/10 hover:bg-primary/20 text-primary")}
                   >
                     {icalCopied ? <><Check className="w-4 h-4" /> Gekopieerd</> : <><Copy className="w-4 h-4" /> Kopieer</>}
                   </button>
@@ -444,14 +444,14 @@ export default function Dashboard() {
 
         {/* ── Open offers from others ── */}
         {!isAdmin && myVolunteerId && openOffersFromOthers.length > 0 && (
-          <div className="bg-primary/5 border-2 border-primary/20 rounded-2xl p-5 mb-6 no-print">
+          <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5 mb-6 no-print">
             <h2 className="font-display font-bold text-lg mb-3 flex items-center gap-2">
               <ArrowLeftRight className="w-5 h-5 text-primary" />
               Aangeboden diensten
             </h2>
             <ul className="space-y-2">
               {openOffersFromOthers.map(offer => (
-                <li key={offer.id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-border rounded-xl px-4 py-3 gap-3">
+                <li key={offer.id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-card border border-border/60 rounded-2xl px-4 py-3 gap-3">
                   <span className="text-sm font-semibold">
                     <span className="text-primary">{offer.volunteer.name}</span> biedt aan:{' '}
                     <span className="capitalize">{format(parseISO(offer.shift.date), 'd MMMM', { locale: nl })}</span>
@@ -459,7 +459,7 @@ export default function Dashboard() {
                   </span>
                   <button
                     onClick={() => { setRespondOffer(offer); setIsOfferResponseOpen(true); }}
-                    className="w-full sm:w-auto shrink-0 text-sm font-bold px-4 py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                    className="w-full sm:w-auto shrink-0 text-sm font-semibold px-4 py-2.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                   >
                     Reageren
                   </button>
@@ -471,7 +471,7 @@ export default function Dashboard() {
 
         {/* ── Pending responses on my offers ── */}
         {!isAdmin && myOffersWithPendingResponses.length > 0 && (
-          <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-5 mb-6 no-print">
+          <div className="bg-amber-50 border border-amber-200/70 rounded-2xl p-5 mb-6 no-print">
             <h2 className="font-display font-bold text-lg mb-3 flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-amber-600" />
               Reacties op jouw aanbiedingen
@@ -479,7 +479,7 @@ export default function Dashboard() {
             <ul className="space-y-3">
               {myOffersWithPendingResponses.flatMap(offer =>
                 offer.responses.filter(r => r.status === 'pending').map(response => (
-                  <li key={response.id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-amber-200 rounded-xl px-4 py-3 gap-3">
+                  <li key={response.id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-card border border-amber-200/70 rounded-2xl px-4 py-3 gap-3">
                     <span className="text-sm font-semibold">
                       <span className="text-amber-700">{response.responder.name}</span> wil jouw dienst op{' '}
                       <span className="capitalize">{format(parseISO(offer.shift.date), 'd MMMM', { locale: nl })}</span>{' '}
@@ -494,7 +494,7 @@ export default function Dashboard() {
                           { responseId: response.id, type: response.type },
                           { onSuccess: () => toast({ title: 'Geaccepteerd', description: 'De dienst is overgedragen.' }) }
                         )}
-                        className="text-sm font-bold px-4 py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                        className="text-sm font-semibold px-4 py-2.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                       >
                         Accepteren
                       </button>
@@ -503,7 +503,7 @@ export default function Dashboard() {
                           { responseId: response.id },
                           { onSuccess: () => toast({ title: 'Geweigerd' }) }
                         )}
-                        className="text-sm font-bold px-4 py-2.5 rounded-lg border border-border hover:bg-muted transition-colors"
+                        className="text-sm font-semibold px-4 py-2.5 rounded-full border border-border/60 hover:bg-muted transition-colors"
                       >
                         Weigeren
                       </button>
@@ -518,7 +518,7 @@ export default function Dashboard() {
         {/* ── Header ── */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8 no-print">
           <div>
-            <h1 className="text-2xl sm:text-4xl font-display font-extrabold mb-2">Kantine Planning</h1>
+            <h1 className="text-2xl sm:text-4xl font-display font-bold mb-2">Kantine Planning</h1>
             <p className="text-muted-foreground text-lg">Bekijk de volledige kantine planning.</p>
           </div>
 
@@ -526,7 +526,7 @@ export default function Dashboard() {
             {myVolunteerId && icalDismissed && (
               <button
                 onClick={restoreIcalBanner}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-sm font-semibold transition-colors"
+                className="flex items-center gap-2 px-3 py-2 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-sm font-semibold transition-colors"
                 title="Agenda exporteren"
               >
                 <CalendarDays className="w-4 h-4" />
@@ -541,10 +541,10 @@ export default function Dashboard() {
                   <button
                     onClick={() => setFilterOpen(o => !o)}
                     className={cn(
-                      "flex items-center gap-2 px-4 py-3 rounded-xl font-bold border-2 transition-all",
+                      "flex items-center gap-2 px-4 py-3 rounded-full font-semibold border transition-all",
                       filterOpen || activeCount > 0
                         ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-white border-border text-foreground hover:border-primary/40"
+                        : "bg-card border-border/60 text-foreground hover:border-primary/40"
                     )}
                   >
                     <SlidersHorizontal className="w-4 h-4" />
@@ -560,7 +560,7 @@ export default function Dashboard() {
               })()}
 
               {filterOpen && (
-                <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-1rem)] bg-white border-2 border-border rounded-2xl shadow-xl z-20 overflow-hidden">
+                <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-1rem)] bg-card border border-border/60 rounded-2xl shadow-lg z-20 overflow-hidden">
                   <div className="p-4 space-y-5">
 
                     {/* Weergave */}
@@ -589,8 +589,8 @@ export default function Dashboard() {
                         <button
                           onClick={() => setMyShiftsOnly(o => !o)}
                           className={cn(
-                            "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold text-sm border-2 transition-all",
-                            myShiftsOnly ? "bg-primary/10 border-primary text-primary" : "bg-muted/30 border-border text-foreground hover:border-primary/40"
+                            "w-full flex items-center gap-3 px-4 py-2.5 rounded-full font-semibold text-sm border transition-all",
+                            myShiftsOnly ? "bg-primary/10 border-primary text-primary" : "bg-muted/30 border-border/60 text-foreground hover:border-primary/40"
                           )}
                         >
                           <User className="w-4 h-4" />
@@ -606,7 +606,7 @@ export default function Dashboard() {
                         <select
                           value={slotFilter ?? ''}
                           onChange={e => setSlotFilter(e.target.value || null)}
-                          className="w-full px-4 py-2.5 rounded-xl font-bold text-sm border-2 border-border bg-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                          className="w-full px-4 py-2.5 rounded-full font-semibold text-sm border border-border/60 bg-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                         >
                           <option value="">Alle diensten</option>
                           {slots.map(s => (
@@ -635,8 +635,8 @@ export default function Dashboard() {
               <button
                 onClick={() => setPrintOpen(o => !o)}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-3 rounded-xl font-bold border-2 transition-all",
-                  printOpen ? "bg-primary text-primary-foreground border-primary" : "bg-white border-border text-foreground hover:border-primary/40"
+                  "flex items-center gap-2 px-4 py-3 rounded-full font-semibold border transition-all",
+                  printOpen ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border/60 text-foreground hover:border-primary/40"
                 )}
               >
                 <Printer className="w-4 h-4" />
@@ -645,7 +645,7 @@ export default function Dashboard() {
               </button>
 
               {printOpen && (
-                <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-1rem)] bg-white border-2 border-border rounded-2xl shadow-xl z-20">
+                <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-1rem)] bg-card border border-border/60 rounded-2xl shadow-lg z-20">
                   <div className="p-4 space-y-4">
 
                     {seasons && seasons.length > 0 && (
@@ -654,7 +654,7 @@ export default function Dashboard() {
                         <select
                           value={printSeasonId ?? ''}
                           onChange={e => setPrintSeasonId(e.target.value ? Number(e.target.value) : null)}
-                          className="w-full px-4 py-2.5 rounded-xl font-bold text-sm border-2 border-border bg-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          className="w-full px-4 py-2.5 rounded-full font-semibold text-sm border border-border/60 bg-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/30"
                         >
                           <option value="">Alle seizoenen</option>
                           {seasons.map(s => (
@@ -710,7 +710,7 @@ export default function Dashboard() {
                       <select
                         value={printVolunteerId ?? ''}
                         onChange={e => setPrintVolunteerId(e.target.value ? Number(e.target.value) : null)}
-                        className="w-full px-4 py-2.5 rounded-xl font-bold text-sm border-2 border-border bg-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="w-full px-4 py-2.5 rounded-full font-semibold text-sm border border-border/60 bg-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/30"
                       >
                         <option value="">Alle vrijwilligers</option>
                         {volunteers?.map(v => (
@@ -722,7 +722,7 @@ export default function Dashboard() {
                     <button
                       onClick={handlePrint}
                       disabled={printSlotFilter !== null && printSlotFilter.length === 0}
-                      className="w-full py-2.5 rounded-xl font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="w-full py-2.5 rounded-full font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       <Printer className="w-4 h-4" /> Afdrukken
                     </button>
@@ -735,10 +735,10 @@ export default function Dashboard() {
 
         {/* ── Week Navigation ── */}
         {filterMode === 'week' && (
-          <div className="flex items-center justify-between bg-white p-4 rounded-2xl border-2 border-border mb-8 shadow-sm no-print">
+          <div className="flex items-center justify-between bg-card p-4 rounded-2xl border border-border/60 mb-8 shadow-sm no-print">
             <button
               onClick={() => setCurrentDate(subWeeks(currentDate, 1))}
-              className="p-2 rounded-xl hover:bg-muted transition-colors flex items-center gap-1 font-bold text-muted-foreground hover:text-foreground"
+              className="p-2 rounded-full hover:bg-muted transition-colors flex items-center gap-1 font-semibold text-muted-foreground hover:text-foreground"
             >
               <ChevronLeft className="w-5 h-5" /> Vorige
             </button>
@@ -747,7 +747,7 @@ export default function Dashboard() {
             </h2>
             <button
               onClick={() => setCurrentDate(addWeeks(currentDate, 1))}
-              className="p-2 rounded-xl hover:bg-muted transition-colors flex items-center gap-1 font-bold text-muted-foreground hover:text-foreground"
+              className="p-2 rounded-full hover:bg-muted transition-colors flex items-center gap-1 font-semibold text-muted-foreground hover:text-foreground"
             >
               Volgende <ChevronRight className="w-5 h-5" />
             </button>
@@ -759,7 +759,7 @@ export default function Dashboard() {
           {isLoading ? (
             <div className="py-20 text-center text-muted-foreground font-bold animate-pulse">Schema laden...</div>
           ) : sortedDates.length === 0 ? (
-            <div className="py-20 text-center bg-white border-2 border-dashed border-border rounded-3xl">
+            <div className="py-20 text-center bg-card border-2 border-dashed border-border/50 rounded-3xl">
               <CalendarIcon className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
               <h3 className="text-2xl font-bold text-foreground mb-2">Geen diensten gevonden</h3>
               <p className="text-muted-foreground">

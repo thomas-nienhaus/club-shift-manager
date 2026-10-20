@@ -102,7 +102,7 @@ function HomeGameSection({ season }: { season: Season }) {
           {wizardStep === 'idle' && (
             <button
               onClick={() => setWizardStep('step1')}
-              className="w-full text-sm font-bold text-primary border-2 border-dashed border-primary/30 rounded-xl py-2 hover:bg-primary/5 transition-colors mt-1"
+              className="w-full text-sm font-semibold text-primary border-2 border-dashed border-primary/30 rounded-2xl py-2 hover:bg-primary/5 transition-colors mt-1"
             >
               + Thuiswedstrijden toevoegen
             </button>
@@ -250,7 +250,7 @@ export default function Seasons() {
       <AppLayout>
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
           <div>
-            <h1 className="text-4xl font-display font-extrabold mb-2">Seizoenen</h1>
+            <h1 className="text-4xl font-display font-bold mb-2">Seizoenen</h1>
             <p className="text-muted-foreground text-lg">Beheer de seizoenen en importeer roosters.</p>
           </div>
 
@@ -262,7 +262,7 @@ export default function Seasons() {
         {isLoading ? (
           <div className="py-20 text-center text-muted-foreground font-bold animate-pulse">Laden...</div>
         ) : seasons?.length === 0 ? (
-          <div className="py-20 text-center bg-white border-2 border-dashed border-border rounded-3xl">
+          <div className="py-20 text-center bg-card border-2 border-dashed border-border/50 rounded-3xl">
             <CalendarIcon className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
             <h3 className="text-2xl font-bold text-foreground mb-2">Geen seizoenen gevonden</h3>
             <p className="text-muted-foreground">Begin met het aanmaken van een nieuw seizoen.</p>
@@ -273,7 +273,7 @@ export default function Seasons() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {seasons?.map(season => (
-              <div key={season.id} className={`bg-white rounded-2xl border-2 p-6 shadow-sm flex flex-col transition-colors ${season.isPublished ? 'border-green-200 hover:border-green-400' : 'border-border hover:border-primary/50'}`}>
+              <div key={season.id} className={`bg-card rounded-2xl border p-6 shadow-sm flex flex-col transition-colors ${season.isPublished ? 'border-green-200/70 hover:border-green-400/70' : 'border-border/60 hover:border-primary/50'}`}>
                 <div className="mb-4">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <h3 className="text-2xl font-display font-bold">{season.name}</h3>
@@ -296,10 +296,10 @@ export default function Seasons() {
                   <button
                     onClick={() => handleTogglePublish(season)}
                     disabled={isPublishing}
-                    className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold transition-colors ${
+                    className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full font-semibold transition-colors ${
                       season.isPublished
-                        ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border-2 border-amber-200'
-                        : 'bg-green-50 text-green-700 hover:bg-green-100 border-2 border-green-200'
+                        ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'
+                        : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
                     }`}
                   >
                     {season.isPublished
@@ -308,15 +308,15 @@ export default function Seasons() {
                   </button>
 
                   <div className="flex gap-3">
-                    <Link href={`/beheer?season=${season.id}`} className="flex-1">
-                      <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold border-2 border-border text-foreground hover:bg-muted transition-colors">
-                        <Eye className="w-4 h-4" /> Planning beheren
+                    <Link href={`/?startDate=${season.startDate}&endDate=${season.endDate}`} className="flex-1">
+                      <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full font-semibold border border-border/60 text-foreground hover:bg-muted transition-colors">
+                        <Eye className="w-4 h-4" /> Planning
                       </button>
                     </Link>
                     <button
                       onClick={() => handleDelete(season)}
                       disabled={isDeleting}
-                      className="p-3 rounded-xl font-bold border-2 border-destructive/20 text-destructive hover:bg-destructive/10 transition-colors"
+                      className="p-3 rounded-full font-semibold border border-destructive/20 text-destructive hover:bg-destructive/10 transition-colors"
                       title="Verwijder seizoen"
                     >
                       <Trash2 className="w-5 h-5" />
@@ -423,7 +423,7 @@ function CreateSeasonModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, on
             </div>
           </div>
 
-          <div className={`rounded-xl border-2 p-4 transition-colors ${autoGenerate ? 'border-primary/40 bg-primary/5' : 'border-border bg-muted/20'}`}>
+          <div className={`rounded-2xl border p-4 transition-colors ${autoGenerate ? 'border-primary/40 bg-primary/5' : 'border-border/60 bg-muted/20'}`}>
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
